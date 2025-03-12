@@ -10,7 +10,7 @@ import { toast } from "sonner";
 const ShipAlert = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
-  const { detectedShip, classifyShip } = useShipStore();
+  const { currentShip, classifyShip } = useShipStore();
   
   const classifications: ShipClassification[] = [
     "HOSTILE",
@@ -22,7 +22,7 @@ const ShipAlert = () => {
   ];
   
   useEffect(() => {
-    if (detectedShip && !detectedShip.classification) {
+    if (currentShip && !currentShip.classification) {
       setIsVisible(true);
       setIsFlashing(true);
       
@@ -35,11 +35,11 @@ const ShipAlert = () => {
       setIsVisible(false);
       setIsFlashing(false);
     }
-  }, [detectedShip]);
+  }, [currentShip]);
   
   const handleClassify = (classification: ShipClassification) => {
-    if (detectedShip) {
-      classifyShip(detectedShip.id, classification);
+    if (currentShip) {
+      classifyShip(classification);
       setIsVisible(false);
       setIsFlashing(false);
       
