@@ -87,6 +87,7 @@ export default {
 			backgroundImage: {
 				'naval-bg': "url('/lovable-uploads/791e983c-bbd2-4146-aa99-5ebdeb6170fb.png')",
 				'logo': "url('/lovable-uploads/b5a24c99-8af1-4ad1-9ede-402b16064f59.png')",
+				'naval-logo': "url('/lovable-uploads/5c858440-461f-496b-bba0-1d5a6fdf392a.png')",
 			}
 		}
 	},

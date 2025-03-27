@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from "sonner";
-import { Anchor } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -36,8 +35,8 @@ const Login = () => {
     <div className="min-h-screen bg-naval-bg bg-cover bg-center flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
-          <div className="bg-[#03224c] p-4 rounded-full">
-            <Anchor className="h-10 w-10 text-white" />
+          <div className="w-28 h-28 rounded-full overflow-hidden">
+            <div className="w-full h-full bg-naval-logo bg-contain bg-center bg-no-repeat" />
           </div>
         </div>
         
