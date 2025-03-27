@@ -28,13 +28,13 @@ const getClassificationColor = (classification: ShipClassification) => {
     case "HOSTILE":
       return "bg-alert/10 text-alert border-alert/30";
     case "SUSPECT":
-      return "bg-suspect/10 text-suspect border-suspect/30";
+      return "bg-suspect/10 text-black border-suspect/30";
     case "INCONNU":
-      return "bg-unknown/10 text-unknown border-unknown/30";
+      return "bg-unknown/10 text-black border-unknown/30";
     case "PRESUME AMI":
-      return "bg-presumed/10 text-presumed border-presumed/30";
+      return "bg-presumed/10 text-black border-presumed/30";
     case "NEUTRE":
-      return "bg-neutral/10 text-neutral border-neutral/30";
+      return "bg-neutral/10 text-black border-neutral/30";
     case "AMI":
       return "bg-friendly/10 text-friendly border-friendly/30";
   }
