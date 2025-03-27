@@ -1,7 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gauge } from "lucide-react";
-import MqttConfig from "./MqttConfig";
 import GpsPosition from "./GpsPosition";
 
 const CommandPanel = () => {
@@ -24,8 +23,6 @@ const CommandPanel = () => {
           </div>
         </CardContent>
       </Card>
-      
-      <MqttConfig />
     </div>
   );
 };

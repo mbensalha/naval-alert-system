@@ -1,7 +1,7 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { History, Home } from 'lucide-react';
+import { History, Home, Settings } from 'lucide-react';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -37,6 +37,17 @@ const Sidebar = () => {
           aria-label="Historique"
         >
           <History size={24} />
+        </Link>
+        
+        <Link 
+          to="/settings"
+          className={cn(
+            "p-2 rounded-md transition-all hover:bg-white/10 hover-scale",
+            isActive('/settings') && "bg-white/20"
+          )}
+          aria-label="Configuration"
+        >
+          <Settings size={24} />
         </Link>
       </nav>
     </aside>
