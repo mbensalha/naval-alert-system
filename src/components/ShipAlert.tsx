@@ -52,7 +52,7 @@ const ShipAlert = () => {
   if (!isVisible) return null;
   
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-fade-in">
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 animate-fade-in">
       <Alert className="bg-navy border border-accent shadow-lg max-w-md">
         <Bell className={`h-5 w-5 ${isFlashing ? 'text-red-500 animate-pulse' : 'text-accent'}`} />
         <AlertTitle className="text-white font-bold text-lg">
