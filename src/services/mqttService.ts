@@ -18,24 +18,41 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   lastPosition: null,
   
   connect: (brokerUrl: string) => {
+    console.log("Connecting to MQTT broker:", brokerUrl);
+    
+    // Disconnect existing client if there is one
+    const existingClient = get().client;
+    if (existingClient) {
+      console.log("Disconnecting existing MQTT client before connecting");
+      existingClient.end();
+    }
+    
+    // Connect to broker
     const client = mqtt.connect(brokerUrl);
     
     client.on('connect', () => {
-      console.log('Connected to MQTT broker');
+      console.log('Successfully connected to MQTT broker');
       set({ client, connected: true });
     });
     
     client.on('message', (topic, message) => {
-      console.log(`Received message on topic ${topic}: ${message.toString()}`);
+      const messageStr = message.toString();
+      console.log(`Received MQTT message on topic ${topic}:`, messageStr);
+      
       try {
         if (topic.includes('gps') || topic.includes('position')) {
-          const data = JSON.parse(message.toString());
+          const data = JSON.parse(messageStr);
+          console.log("Parsed MQTT position data:", data);
+          
           if (data.lat !== undefined && data.long !== undefined) {
+            console.log("Setting new position:", { lat: data.lat, long: data.long });
             set({ lastPosition: { lat: data.lat, long: data.long } });
+          } else {
+            console.warn("MQTT message missing lat/long properties:", data);
           }
         }
       } catch (error) {
-        console.error('Error parsing MQTT message:', error);
+        console.error('Error parsing MQTT message:', error, 'Raw message:', messageStr);
       }
     });
     
@@ -52,6 +69,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   disconnect: () => {
     const { client } = get();
     if (client) {
+      console.log('Manually disconnecting MQTT client');
       client.end();
       set({ client: null, connected: false });
     }
@@ -60,19 +78,23 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   subscribe: (topic: string) => {
     const { client } = get();
     if (client) {
+      console.log(`Subscribing to MQTT topic: ${topic}`);
       client.subscribe(topic, (err) => {
         if (err) {
           console.error(`Error subscribing to ${topic}:`, err);
         } else {
-          console.log(`Subscribed to ${topic}`);
+          console.log(`Successfully subscribed to ${topic}`);
         }
       });
+    } else {
+      console.warn("Cannot subscribe: MQTT client not connected");
     }
   },
   
   unsubscribe: (topic: string) => {
     const { client } = get();
     if (client) {
+      console.log(`Unsubscribing from MQTT topic: ${topic}`);
       client.unsubscribe(topic);
     }
   }

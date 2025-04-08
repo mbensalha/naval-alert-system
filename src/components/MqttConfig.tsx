@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMqttStore } from "@/services/mqttService";
 import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
@@ -10,7 +10,15 @@ import { WifiIcon, SignalIcon } from "lucide-react";
 const MqttConfig = () => {
   const [brokerUrl, setBrokerUrl] = useState("ws://localhost:9001");
   const [topic, setTopic] = useState("esp32/gps");
-  const { connect, subscribe, connected } = useMqttStore();
+  const { connect, subscribe, connected, lastPosition } = useMqttStore();
+  
+  // Display current connection status
+  useEffect(() => {
+    if (connected) {
+      console.log("MQTT connected status:", connected);
+      console.log("Current MQTT lastPosition:", lastPosition);
+    }
+  }, [connected, lastPosition]);
   
   const handleConnect = () => {
     if (!brokerUrl) {
@@ -19,16 +27,29 @@ const MqttConfig = () => {
     }
     
     try {
+      console.log("Attempting to connect to MQTT broker:", brokerUrl);
       connect(brokerUrl);
       
       if (topic) {
-        setTimeout(() => subscribe(topic), 1000);
+        console.log("Will subscribe to topic after connection:", topic);
+        // Wait a moment before subscribing to ensure connection is established
+        setTimeout(() => {
+          if (useMqttStore.getState().connected) {
+            subscribe(topic);
+            console.log("Subscribed to topic:", topic);
+            
+            toast.success("Connecté au broker MQTT", {
+              description: `Abonné au topic: ${topic}`,
+            });
+          } else {
+            toast.error("Échec de connexion au broker MQTT", {
+              description: "La connexion n'a pas pu être établie",
+            });
+          }
+        }, 1500);
       }
-      
-      toast.success("Connecté au broker MQTT", {
-        description: `Abonné au topic: ${topic}`,
-      });
     } catch (error) {
+      console.error("MQTT connection error:", error);
       toast.error("Erreur de connexion au broker MQTT", {
         description: String(error),
       });
@@ -52,6 +73,9 @@ const MqttConfig = () => {
             placeholder="ws://localhost:9001"
             className="bg-navy-light text-white border-accent"
           />
+          <p className="text-xs text-white/60">
+            Format: ws://adresse:port (pour WebSocket) ou mqtt://adresse:port (pour TCP)
+          </p>
         </div>
         
         <div className="space-y-2">
@@ -62,6 +86,9 @@ const MqttConfig = () => {
             placeholder="esp32/gps"
             className="bg-navy-light text-white border-accent"
           />
+          <p className="text-xs text-white/60">
+            Exemple de format JSON attendu: {`{"lat": 48.856614, "long": 2.3522219}`}
+          </p>
         </div>
         
         <Button 
@@ -82,6 +109,15 @@ const MqttConfig = () => {
           <div className="flex items-center justify-center p-2 bg-green-900/30 rounded border border-green-500/30">
             <SignalIcon className="h-4 w-4 text-green-400 mr-2" />
             <span className="text-green-400 text-sm">Connecté au broker MQTT</span>
+          </div>
+        )}
+        
+        {connected && lastPosition && (
+          <div className="p-3 bg-navy-light rounded">
+            <p className="text-sm mb-1">Dernière position reçue:</p>
+            <p className="text-xs text-green-400">
+              Latitude: {lastPosition.lat.toFixed(6)}° N, Longitude: {lastPosition.long.toFixed(6)}° E
+            </p>
           </div>
         )}
       </CardContent>

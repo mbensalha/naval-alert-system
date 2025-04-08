@@ -11,10 +11,14 @@ const GpsPosition = () => {
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   
   useEffect(() => {
+    console.log("MQTT lastPosition:", lastPosition);
+    
     if (lastPosition) {
+      console.log("Updating display with MQTT position:", lastPosition);
       // When we receive a position from MQTT, update the display
       setDisplayPosition(lastPosition);
     } else if (currentShip?.position) {
+      console.log("Using ship position:", currentShip.position);
       // If we have no MQTT position but there's a detected ship, show its position
       setDisplayPosition(currentShip.position);
     }
