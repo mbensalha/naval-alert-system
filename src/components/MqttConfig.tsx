@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
-  // Update default broker URL to match the one from the screenshot
-  const [brokerUrl, setBrokerUrl] = useState("mqtt://test.mosquitto.org:1883");
+  // Update default broker URL to use secure WebSocket
+  const [brokerUrl, setBrokerUrl] = useState("wss://broker.emqx.io:8084");
   const [topic, setTopic] = useState("esp32/gps");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
@@ -81,11 +81,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="mqtt://test.mosquitto.org:1883"
+            placeholder="wss://broker.emqx.io:8084"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Format: mqtt://adresse:port (pour TCP) ou ws://adresse:port (pour WebSocket)
+            Format: wss://adresse:port (pour WebSocket sécurisé) ou mqtts://adresse:port (pour TLS)
           </p>
         </div>
         

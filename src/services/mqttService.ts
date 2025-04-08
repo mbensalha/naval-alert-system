@@ -32,61 +32,70 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       keepalive: 30,
       connectTimeout: 10 * 1000, // 10 seconds
       reconnectPeriod: 5000, // 5 seconds
+      // For WebSockets security
+      rejectUnauthorized: false,
+      protocol: brokerUrl.startsWith('wss://') ? 'wss' : 
+                brokerUrl.startsWith('ws://') ? 'ws' : undefined,
     };
     
     console.log("Creating MQTT client with options:", options);
     
-    // Connect to broker
-    const client = mqtt.connect(brokerUrl, options);
-    
-    client.on('connect', () => {
-      console.log('Successfully connected to MQTT broker:', brokerUrl);
-      set({ client, connected: true });
-    });
-    
-    client.on('reconnect', () => {
-      console.log('Attempting to reconnect to MQTT broker...');
-    });
-    
-    client.on('message', (topic, message) => {
-      const messageStr = message.toString();
-      console.log(`Received MQTT message on topic ${topic}:`, messageStr);
+    try {
+      // Connect to broker
+      const client = mqtt.connect(brokerUrl, options);
       
-      try {
-        if (topic.includes('gps') || topic.includes('position')) {
-          console.log("Processing position data from topic:", topic);
-          const data = JSON.parse(messageStr);
-          console.log("Parsed MQTT position data:", data);
-          
-          if (data.lat !== undefined && data.long !== undefined) {
-            console.log("Setting new position:", { lat: data.lat, long: data.long });
-            set({ lastPosition: { lat: data.lat, long: data.long } });
-          } else if (data.latitude !== undefined && data.longitude !== undefined) {
-            // Try alternative property names
-            console.log("Setting new position from alternate properties:", { lat: data.latitude, long: data.longitude });
-            set({ lastPosition: { lat: data.latitude, long: data.longitude } });
-          } else {
-            console.warn("MQTT message missing lat/long properties:", data);
+      client.on('connect', () => {
+        console.log('Successfully connected to MQTT broker:', brokerUrl);
+        set({ client, connected: true });
+      });
+      
+      client.on('reconnect', () => {
+        console.log('Attempting to reconnect to MQTT broker...');
+      });
+      
+      client.on('message', (topic, message) => {
+        const messageStr = message.toString();
+        console.log(`Received MQTT message on topic ${topic}:`, messageStr);
+        
+        try {
+          if (topic.includes('gps') || topic.includes('position')) {
+            console.log("Processing position data from topic:", topic);
+            const data = JSON.parse(messageStr);
+            console.log("Parsed MQTT position data:", data);
+            
+            if (data.lat !== undefined && data.long !== undefined) {
+              console.log("Setting new position:", { lat: data.lat, long: data.long });
+              set({ lastPosition: { lat: data.lat, long: data.long } });
+            } else if (data.latitude !== undefined && data.longitude !== undefined) {
+              // Try alternative property names
+              console.log("Setting new position from alternate properties:", { lat: data.latitude, long: data.longitude });
+              set({ lastPosition: { lat: data.latitude, long: data.longitude } });
+            } else {
+              console.warn("MQTT message missing lat/long properties:", data);
+            }
           }
+        } catch (error) {
+          console.error('Error parsing MQTT message:', error, 'Raw message:', messageStr);
         }
-      } catch (error) {
-        console.error('Error parsing MQTT message:', error, 'Raw message:', messageStr);
-      }
-    });
-    
-    client.on('error', (err) => {
-      console.error('MQTT connection error:', err);
-    });
-    
-    client.on('close', () => {
-      console.log('MQTT connection closed');
-      set({ connected: false });
-    });
-    
-    client.on('offline', () => {
-      console.log('MQTT client went offline');
-      set({ connected: false });
-    });
+      });
+      
+      client.on('error', (err) => {
+        console.error('MQTT connection error:', err);
+      });
+      
+      client.on('close', () => {
+        console.log('MQTT connection closed');
+        set({ connected: false });
+      });
+      
+      client.on('offline', () => {
+        console.log('MQTT client went offline');
+        set({ connected: false });
+      });
+    } catch (error) {
+      console.error('Error creating MQTT client:', error);
+      set({ client: null, connected: false });
+    }
   },
   
   disconnect: () => {
