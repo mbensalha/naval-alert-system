@@ -6,23 +6,30 @@ import { Compass, MapPinIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const GpsPosition = () => {
-  const { lastPosition } = useMqttStore();
+  const { lastPosition, connected } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
+  const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
   
   useEffect(() => {
-    console.log("MQTT lastPosition:", lastPosition);
+    console.log("GpsPosition component - MQTT connected:", connected);
+    console.log("GpsPosition component - MQTT lastPosition:", lastPosition);
+    console.log("GpsPosition component - Current ship:", currentShip);
     
     if (lastPosition) {
       console.log("Updating display with MQTT position:", lastPosition);
       // When we receive a position from MQTT, update the display
       setDisplayPosition(lastPosition);
+      setPositionSource('mqtt');
     } else if (currentShip?.position) {
       console.log("Using ship position:", currentShip.position);
       // If we have no MQTT position but there's a detected ship, show its position
       setDisplayPosition(currentShip.position);
+      setPositionSource('ship');
+    } else {
+      setPositionSource('none');
     }
-  }, [lastPosition, currentShip]);
+  }, [lastPosition, currentShip, connected]);
   
   return (
     <Card className="bg-navy text-white border-none shadow-lg">
@@ -37,10 +44,17 @@ const GpsPosition = () => {
           <div className="flex items-center mb-2">
             <MapPinIcon className="h-5 w-5 text-accent mr-2" />
             <span className="text-white">Position actuelle</span>
+            {positionSource === 'mqtt' && (
+              <span className="text-xs text-green-400 ml-2">(MQTT)</span>
+            )}
           </div>
-          <span className="text-white/80">
-            {displayPosition.lat.toFixed(6)}° N, {displayPosition.long.toFixed(6)}° E
-          </span>
+          {positionSource !== 'none' ? (
+            <span className="text-white/80">
+              {displayPosition.lat.toFixed(6)}° N, {displayPosition.long.toFixed(6)}° E
+            </span>
+          ) : (
+            <span className="text-white/50 text-sm">En attente de données GPS...</span>
+          )}
         </div>
       </CardContent>
     </Card>

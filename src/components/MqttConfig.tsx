@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
-  const [brokerUrl, setBrokerUrl] = useState("ws://localhost:9001");
+  // Update default broker URL to match the one from the screenshot
+  const [brokerUrl, setBrokerUrl] = useState("mqtt://test.mosquitto.org:1883");
   const [topic, setTopic] = useState("esp32/gps");
-  const { connect, subscribe, connected, lastPosition } = useMqttStore();
+  const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
   // Display current connection status
   useEffect(() => {
@@ -18,6 +19,11 @@ const MqttConfig = () => {
       console.log("MQTT connected status:", connected);
       console.log("Current MQTT lastPosition:", lastPosition);
     }
+    
+    // Cleanup on component unmount
+    return () => {
+      console.log("MqttConfig component unmounting, cleaning up connection");
+    };
   }, [connected, lastPosition]);
   
   const handleConnect = () => {
@@ -28,6 +34,11 @@ const MqttConfig = () => {
     
     try {
       console.log("Attempting to connect to MQTT broker:", brokerUrl);
+      
+      // Disconnect any existing connection first
+      disconnect();
+      
+      // Connect to the broker with the new URL
       connect(brokerUrl);
       
       if (topic) {
@@ -70,11 +81,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="ws://localhost:9001"
+            placeholder="mqtt://test.mosquitto.org:1883"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Format: ws://adresse:port (pour WebSocket) ou mqtt://adresse:port (pour TCP)
+            Format: mqtt://adresse:port (pour TCP) ou ws://adresse:port (pour WebSocket)
           </p>
         </div>
         
@@ -117,6 +128,9 @@ const MqttConfig = () => {
             <p className="text-sm mb-1">Dernière position reçue:</p>
             <p className="text-xs text-green-400">
               Latitude: {lastPosition.lat.toFixed(6)}° N, Longitude: {lastPosition.long.toFixed(6)}° E
+            </p>
+            <p className="text-xs text-white/60 mt-2">
+              Dernière mise à jour: {new Date().toLocaleTimeString()}
             </p>
           </div>
         )}
