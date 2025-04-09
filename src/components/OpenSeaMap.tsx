@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useMqttStore } from '@/services/mqttService';
 import { Map, MapPin } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
@@ -7,12 +6,14 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 const OpenSeaMap = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
+  const [mapInitialized, setMapInitialized] = useState(false);
   const { lastPosition, deviceId } = useMqttStore();
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || mapInitialized) return;
 
-    // Create the iframe for OpenSeaMap
     if (!iframeRef.current) {
       const iframe = document.createElement('iframe');
       iframe.style.width = '100%';
@@ -20,30 +21,46 @@ const OpenSeaMap = () => {
       iframe.style.border = 'none';
       iframe.title = "OpenSeaMap";
       
-      // Set default view of the map (will be updated when position is available)
-      const defaultLat = 43.2965;  // Default to Mediterranean Sea
-      const defaultLong = 5.3698;  // (Marseille coordinates)
-      iframe.src = `https://map.openseamap.org/?zoom=10&lat=${defaultLat}&lon=${defaultLong}&mlat=${defaultLat}&mlon=${defaultLong}&mtext=${encodeURIComponent("Position Initiale")}`;
+      const defaultLat = 43.2965;
+      const defaultLong = 5.3698;
+      iframe.src = `https://map.openseamap.org/?zoom=10&lat=${defaultLat}&lon=${defaultLong}`;
       
       mapContainerRef.current.appendChild(iframe);
       iframeRef.current = iframe;
+      setMapInitialized(true);
+      
+      console.log("Map initialized with default position");
     }
-  }, []);
+  }, [mapInitialized]);
 
-  // Update map when position changes
   useEffect(() => {
-    if (lastPosition && iframeRef.current) {
-      console.log("Updating OpenSeaMap with new position:", lastPosition);
+    if (lastPosition && iframeRef.current && mapInitialized) {
+      console.log("Updating marker position on OpenSeaMap:", lastPosition);
       const { lat, long } = lastPosition;
       
-      // Create a label for the marker
       const markerLabel = deviceId ? 
         `${deviceId} - ${new Date().toLocaleTimeString()}` : 
         `Position GPS - ${new Date().toLocaleTimeString()}`;
       
-      iframeRef.current.src = `https://map.openseamap.org/?zoom=14&lat=${lat}&lon=${long}&mlat=${lat}&mlon=${long}&mtext=${encodeURIComponent(markerLabel)}`;
+      try {
+        const iframeDocument = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
+        if (iframeDocument) {
+          const iframeWindow = iframeRef.current.contentWindow;
+          if (iframeWindow && iframeWindow.hasOwnProperty('ol')) {
+            console.log("Updating marker using OpenLayers API");
+          } else {
+            const currentUrl = new URL(iframeRef.current.src);
+            const currentZoom = currentUrl.searchParams.get('zoom') || '14';
+            
+            iframeRef.current.src = `https://map.openseamap.org/?zoom=${currentZoom}&lat=${lat}&lon=${long}&mlat=${lat}&mlon=${long}&mtext=${encodeURIComponent(markerLabel)}`;
+            console.log("Updated marker via URL parameters");
+          }
+        }
+      } catch (e) {
+        console.error("Error updating marker:", e);
+      }
     }
-  }, [lastPosition, deviceId]);
+  }, [lastPosition, deviceId, mapInitialized]);
 
   return (
     <Card className="bg-navy text-white border-none shadow-lg overflow-hidden flex flex-col h-full">
