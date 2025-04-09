@@ -1,4 +1,3 @@
-
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -6,6 +5,7 @@ interface MqttState {
   client: mqtt.MqttClient | null;
   connected: boolean;
   lastPosition: { lat: number; long: number } | null;
+  speed: number | null;
   connect: (brokerUrl: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
@@ -16,6 +16,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   client: null,
   connected: false,
   lastPosition: null,
+  speed: null,
   
   connect: (brokerUrl: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl);
@@ -63,15 +64,30 @@ export const useMqttStore = create<MqttState>((set, get) => ({
             const data = JSON.parse(messageStr);
             console.log("Parsed MQTT position data:", data);
             
+            // Update position if available
             if (data.lat !== undefined && data.long !== undefined) {
               console.log("Setting new position:", { lat: data.lat, long: data.long });
-              set({ lastPosition: { lat: data.lat, long: data.long } });
+              set((state) => ({ 
+                lastPosition: { lat: data.lat, long: data.long },
+                // Keep existing speed if no speed in this message
+                speed: data.speed !== undefined ? data.speed : state.speed
+              }));
             } else if (data.latitude !== undefined && data.longitude !== undefined) {
               // Try alternative property names
               console.log("Setting new position from alternate properties:", { lat: data.latitude, long: data.longitude });
-              set({ lastPosition: { lat: data.latitude, long: data.longitude } });
+              set((state) => ({ 
+                lastPosition: { lat: data.latitude, long: data.longitude },
+                // Keep existing speed if no speed in this message
+                speed: data.speed !== undefined ? data.speed : state.speed
+              }));
             } else {
               console.warn("MQTT message missing lat/long properties:", data);
+            }
+            
+            // Update speed separately if it exists
+            if (data.speed !== undefined) {
+              console.log("Setting new speed:", data.speed);
+              set({ speed: data.speed });
             }
           }
         } catch (error) {

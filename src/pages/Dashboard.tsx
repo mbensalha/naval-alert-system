@@ -19,8 +19,20 @@ const Dashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
     
-    return () => clearInterval(timer);
-  }, []);
+    // Connect to MQTT broker automatically
+    const brokerUrl = "wss://test.mosquitto.org:8081"; // Using secure WebSocket connection
+    connect(brokerUrl);
+    
+    // Subscribe to position topic after a short delay to ensure connection is established
+    const subscriptionTimer = setTimeout(() => {
+      subscribe("esp32/gps");
+    }, 1500);
+    
+    return () => {
+      clearInterval(timer);
+      clearTimeout(subscriptionTimer);
+    };
+  }, [connect, subscribe]);
 
   // Format date and time
   const formattedDate = currentTime.toLocaleDateString('fr-FR', {

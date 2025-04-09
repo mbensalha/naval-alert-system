@@ -2,38 +2,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShipStore } from "@/store/shipStore";
-import { Camera, Map, MapPin } from "lucide-react";
-import { useMqttStore } from "@/services/mqttService";
+import { Camera } from "lucide-react";
+import OpenSeaMap from "./OpenSeaMap";
 
 const DetectionPanel = () => {
   const detectShip = useShipStore((state) => state.detectShip);
-  const { lastPosition } = useMqttStore();
   
   return (
     <div className="grid grid-cols-2 gap-6 h-full animate-fade-in">
-      <Card className="bg-navy text-white border-none shadow-lg overflow-hidden flex flex-col">
-        <CardHeader className="pb-2 border-b border-white/10">
-          <CardTitle className="text-lg flex items-center">
-            <Map className="mr-2 h-5 w-5 text-accent" />
-            CARTE
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 p-0 relative">
-          <div className="w-full h-full min-h-[400px] bg-navy-light flex items-center justify-center">
-            <span className="text-white/50">Carte maritime</span>
-            
-            {lastPosition && (
-              <div className="absolute" style={{ 
-                left: `${50 + (lastPosition.long * 2)}%`, 
-                top: `${50 - (lastPosition.lat * 2)}%`,
-                transform: 'translate(-50%, -50%)'
-              }}>
-                <MapPin className="h-6 w-6 text-red-500 animate-pulse" />
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <OpenSeaMap />
       
       <Card className="bg-navy text-white border-none shadow-lg overflow-hidden flex flex-col">
         <CardHeader className="pb-2 border-b border-white/10">
