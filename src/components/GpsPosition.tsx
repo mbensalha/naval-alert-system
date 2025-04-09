@@ -6,7 +6,7 @@ import { Compass, MapPinIcon, Gauge } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const GpsPosition = () => {
-  const { lastPosition, connected, speed } = useMqttStore();
+  const { lastPosition, connected, speed, deviceId } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
@@ -15,6 +15,7 @@ const GpsPosition = () => {
     console.log("GpsPosition component - MQTT connected:", connected);
     console.log("GpsPosition component - MQTT lastPosition:", lastPosition);
     console.log("GpsPosition component - MQTT speed:", speed);
+    console.log("GpsPosition component - MQTT deviceId:", deviceId);
     console.log("GpsPosition component - Current ship:", currentShip);
     
     if (lastPosition) {
@@ -30,7 +31,7 @@ const GpsPosition = () => {
     } else {
       setPositionSource('none');
     }
-  }, [lastPosition, currentShip, connected]);
+  }, [lastPosition, currentShip, connected, deviceId]);
   
   return (
     <Card className="bg-navy text-white border-none shadow-lg">
@@ -38,6 +39,7 @@ const GpsPosition = () => {
         <CardTitle className="text-base flex items-center">
           <Compass className="mr-2 h-4 w-4 text-accent" />
           Position GPS:
+          {deviceId && <span className="text-xs text-accent ml-2">({deviceId})</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="py-4">
@@ -63,7 +65,7 @@ const GpsPosition = () => {
               <span className="text-white">Vitesse</span>
             </div>
             {speed !== null ? (
-              <span className="text-white/80 block">{speed.toFixed(1)} nœuds</span>
+              <span className="text-white/80 block">{speed.toFixed(1)} km/h</span>
             ) : (
               <span className="text-white/50 text-sm block">En attente de données...</span>
             )}

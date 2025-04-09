@@ -9,8 +9,8 @@ import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
   // Update default broker URL to use secure WebSocket
-  const [brokerUrl, setBrokerUrl] = useState("wss://broker.emqx.io:8084");
-  const [topic, setTopic] = useState("esp32/gps");
+  const [brokerUrl, setBrokerUrl] = useState("wss://test.mosquitto.org:8081");
+  const [topic, setTopic] = useState("esp32/gps_data");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
   // Display current connection status
@@ -81,7 +81,7 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="wss://broker.emqx.io:8084"
+            placeholder="wss://test.mosquitto.org:8081"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
@@ -94,11 +94,11 @@ const MqttConfig = () => {
           <Input 
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="esp32/gps"
+            placeholder="esp32/gps_data"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Exemple de format JSON attendu: {`{"lat": 48.856614, "long": 2.3522219}`}
+            Format JSON pour Node-RED: {`{"latitude": 48.856614, "longitude": 2.3522219, "speed": 15, "device_id": "ESP32"}`}
           </p>
         </div>
         

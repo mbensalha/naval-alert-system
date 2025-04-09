@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 const OpenSeaMap = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const { lastPosition } = useMqttStore();
+  const { lastPosition, deviceId } = useMqttStore();
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -23,7 +23,7 @@ const OpenSeaMap = () => {
       // Set default view of the map (will be updated when position is available)
       const defaultLat = 43.2965;  // Default to Mediterranean Sea
       const defaultLong = 5.3698;  // (Marseille coordinates)
-      iframe.src = `https://map.openseamap.org/?zoom=10&lat=${defaultLat}&lon=${defaultLong}&mlat=${defaultLat}&mlon=${defaultLong}&mtext=Current%20Position`;
+      iframe.src = `https://map.openseamap.org/?zoom=10&lat=${defaultLat}&lon=${defaultLong}&mlat=${defaultLat}&mlon=${defaultLong}&mtext=${encodeURIComponent("Position Initiale")}`;
       
       mapContainerRef.current.appendChild(iframe);
       iframeRef.current = iframe;
@@ -35,9 +35,15 @@ const OpenSeaMap = () => {
     if (lastPosition && iframeRef.current) {
       console.log("Updating OpenSeaMap with new position:", lastPosition);
       const { lat, long } = lastPosition;
-      iframeRef.current.src = `https://map.openseamap.org/?zoom=14&lat=${lat}&lon=${long}&mlat=${lat}&mlon=${long}&mtext=Current%20Position`;
+      
+      // Create a label for the marker
+      const markerLabel = deviceId ? 
+        `${deviceId} - ${new Date().toLocaleTimeString()}` : 
+        `Position GPS - ${new Date().toLocaleTimeString()}`;
+      
+      iframeRef.current.src = `https://map.openseamap.org/?zoom=14&lat=${lat}&lon=${long}&mlat=${lat}&mlon=${long}&mtext=${encodeURIComponent(markerLabel)}`;
     }
-  }, [lastPosition]);
+  }, [lastPosition, deviceId]);
 
   return (
     <Card className="bg-navy text-white border-none shadow-lg overflow-hidden flex flex-col h-full">

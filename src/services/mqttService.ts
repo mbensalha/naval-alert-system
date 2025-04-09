@@ -1,3 +1,4 @@
+
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -6,6 +7,7 @@ interface MqttState {
   connected: boolean;
   lastPosition: { lat: number; long: number } | null;
   speed: number | null;
+  deviceId: string | null;
   connect: (brokerUrl: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
@@ -17,6 +19,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   connected: false,
   lastPosition: null,
   speed: null,
+  deviceId: null,
   
   connect: (brokerUrl: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl);
@@ -64,20 +67,20 @@ export const useMqttStore = create<MqttState>((set, get) => ({
             const data = JSON.parse(messageStr);
             console.log("Parsed MQTT position data:", data);
             
-            // Update position if available
-            if (data.lat !== undefined && data.long !== undefined) {
-              console.log("Setting new position:", { lat: data.lat, long: data.long });
+            // Handle Node-RED format (latitude, longitude, speed, device_id)
+            if (data.latitude !== undefined && data.longitude !== undefined) {
+              console.log("Setting new position from Node-RED format:", { lat: data.latitude, long: data.longitude });
+              set({
+                lastPosition: { lat: data.latitude, long: data.longitude },
+                speed: data.speed !== undefined ? data.speed : get().speed,
+                deviceId: data.device_id || get().deviceId
+              });
+            }
+            // Handle previous format (lat, long)
+            else if (data.lat !== undefined && data.long !== undefined) {
+              console.log("Setting new position from original format:", { lat: data.lat, long: data.long });
               set((state) => ({ 
                 lastPosition: { lat: data.lat, long: data.long },
-                // Keep existing speed if no speed in this message
-                speed: data.speed !== undefined ? data.speed : state.speed
-              }));
-            } else if (data.latitude !== undefined && data.longitude !== undefined) {
-              // Try alternative property names
-              console.log("Setting new position from alternate properties:", { lat: data.latitude, long: data.longitude });
-              set((state) => ({ 
-                lastPosition: { lat: data.latitude, long: data.longitude },
-                // Keep existing speed if no speed in this message
                 speed: data.speed !== undefined ? data.speed : state.speed
               }));
             } else {

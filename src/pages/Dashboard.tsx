@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -25,6 +24,10 @@ const Dashboard = () => {
     
     // Subscribe to position topic after a short delay to ensure connection is established
     const subscriptionTimer = setTimeout(() => {
+      // Subscribe to Node-RED topic (esp32/gps_data)
+      subscribe("esp32/gps_data");
+      
+      // Also keep the original topic as fallback
       subscribe("esp32/gps");
     }, 1500);
     
