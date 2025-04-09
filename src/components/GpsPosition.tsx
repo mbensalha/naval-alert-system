@@ -2,11 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMqttStore } from "@/services/mqttService";
 import { useShipStore } from "@/store/shipStore";
-import { Compass, MapPinIcon, Gauge } from "lucide-react";
+import { Compass, MapPinIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const GpsPosition = () => {
-  const { lastPosition, connected, speed, deviceId } = useMqttStore();
+  const { lastPosition, connected, deviceId } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
@@ -14,7 +14,6 @@ const GpsPosition = () => {
   useEffect(() => {
     console.log("GpsPosition component - MQTT connected:", connected);
     console.log("GpsPosition component - MQTT lastPosition:", lastPosition);
-    console.log("GpsPosition component - MQTT speed:", speed);
     console.log("GpsPosition component - MQTT deviceId:", deviceId);
     console.log("GpsPosition component - Current ship:", currentShip);
     
@@ -43,7 +42,7 @@ const GpsPosition = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="py-4">
-        <div className="bg-navy-light rounded p-4 space-y-4">
+        <div className="bg-navy-light rounded p-4">
           <div className="flex items-center mb-2">
             <MapPinIcon className="h-5 w-5 text-accent mr-2" />
             <span className="text-white">Position actuelle</span>
@@ -58,18 +57,6 @@ const GpsPosition = () => {
           ) : (
             <span className="text-white/50 text-sm block">En attente de données GPS...</span>
           )}
-          
-          <div className="pt-2 border-t border-white/10">
-            <div className="flex items-center mb-2">
-              <Gauge className="h-5 w-5 text-accent mr-2" />
-              <span className="text-white">Vitesse</span>
-            </div>
-            {speed !== null ? (
-              <span className="text-white/80 block">{speed.toFixed(1)} km/h</span>
-            ) : (
-              <span className="text-white/50 text-sm block">En attente de données...</span>
-            )}
-          </div>
         </div>
       </CardContent>
     </Card>

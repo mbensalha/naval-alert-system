@@ -76,13 +76,14 @@ export const useMqttStore = create<MqttState>((set, get) => ({
                 deviceId: data.device_id || get().deviceId
               });
             }
-            // Handle previous format (lat, long)
-            else if (data.lat !== undefined && data.long !== undefined) {
-              console.log("Setting new position from original format:", { lat: data.lat, long: data.long });
-              set((state) => ({ 
-                lastPosition: { lat: data.lat, long: data.long },
-                speed: data.speed !== undefined ? data.speed : state.speed
-              }));
+            // Handle previous format (lat, lon/long)
+            else if (data.lat !== undefined && (data.long !== undefined || data.lon !== undefined)) {
+              const longitude = data.long !== undefined ? data.long : data.lon;
+              console.log("Setting new position from original format:", { lat: data.lat, long: longitude });
+              set({
+                lastPosition: { lat: data.lat, long: longitude },
+                speed: data.speed !== undefined ? data.speed : get().speed
+              });
             } else {
               console.warn("MQTT message missing lat/long properties:", data);
             }
