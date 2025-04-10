@@ -4,6 +4,14 @@ import { persist } from 'zustand/middleware';
 import { DetectedShip, ShipClassification } from '../types';
 import { playDetectionAlert } from '@/services/audioService';
 
+// Helper function to ensure dates are proper Date objects
+const ensureDates = (ship: any): DetectedShip => {
+  return {
+    ...ship,
+    detectionTime: new Date(ship.detectionTime)
+  };
+};
+
 interface ShipState {
   ships: DetectedShip[];
   alertActive: boolean;
@@ -66,7 +74,9 @@ export const useShipStore = create<ShipState>()(
       },
       
       getHistory: () => {
-        return get().ships.sort((a, b) => 
+        // Ensure dates are properly converted before sorting
+        const ships = get().ships.map(ensureDates);
+        return ships.sort((a, b) => 
           b.detectionTime.getTime() - a.detectionTime.getTime()
         );
       },
@@ -84,7 +94,25 @@ export const useShipStore = create<ShipState>()(
       }
     }),
     {
-      name: 'ship-storage'
+      name: 'ship-storage',
+      // Configure storage serialization/deserialization
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          if (!str) return null;
+          const parsed = JSON.parse(str);
+          return {
+            ...parsed,
+            state: {
+              ...parsed.state,
+              ships: parsed.state.ships.map(ensureDates),
+              currentShip: parsed.state.currentShip ? ensureDates(parsed.state.currentShip) : null
+            }
+          };
+        },
+        setItem: (name, value) => localStorage.setItem(name, JSON.stringify(value)),
+        removeItem: (name) => localStorage.removeItem(name)
+      }
     }
   )
 );
