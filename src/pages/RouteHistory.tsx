@@ -4,11 +4,13 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import { useRouteStore } from '@/store/routeStore';
 import { useMqttStore } from '@/services/mqttService';
-import { Route, Flag, FlagTriangleRight, Timer, MapPin, Navigation } from 'lucide-react';
+import { Route, Flag, FlagTriangleRight, Timer, MapPin, Navigation, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const RouteHistory = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -156,6 +158,14 @@ const RouteHistory = () => {
     setSelectedTrackId(trackId);
   };
 
+  const formatTrackDate = (date: Date) => {
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   const tracks = getTracks();
   const activeTrack = getActiveTrack();
 
@@ -229,32 +239,24 @@ const RouteHistory = () => {
                 {tracks.length === 0 ? (
                   <p className="text-gray-500">Aucune route enregistrée.</p>
                 ) : (
-                  <div className="space-y-4">
+                  <Accordion type="single" collapsible className="space-y-2">
                     {tracks.map((track) => (
-                      <Card 
+                      <AccordionItem 
                         key={track.id} 
+                        value={track.id}
                         className={cn(
-                          "overflow-hidden cursor-pointer hover:border-blue-400 transition-all",
+                          "border border-gray-200 rounded-md overflow-hidden",
                           selectedTrackId === track.id && "border-2 border-blue-500"
                         )}
-                        onClick={() => handleViewTrack(track.id)}
                       >
-                        <CardHeader className="bg-gray-50 p-4">
-                          <CardTitle className="text-lg flex items-center justify-between">
-                            <span>{track.name}</span>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={() => handleViewTrack(track.id)}
-                              className="text-blue-500"
-                            >
-                              <MapPin className="h-4 w-4 mr-1" />
-                              Afficher
-                            </Button>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4">
-                          <div className="grid grid-cols-2 gap-4 mb-2">
+                        <AccordionTrigger className="px-4 py-3 hover:bg-gray-50">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-5 w-5 text-blue-500" />
+                            <span className="font-medium">Route du {formatTrackDate(track.startTime)}</span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="p-4 bg-gray-50">
+                          <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
                               <p className="text-sm text-gray-500">Début</p>
                               <p>{track.startTime.toLocaleString()}</p>
@@ -264,7 +266,7 @@ const RouteHistory = () => {
                               <p>{track.endTime ? track.endTime.toLocaleString() : 'En cours'}</p>
                             </div>
                           </div>
-                          <div>
+                          <div className="mb-4">
                             <p className="text-sm text-gray-500">Points</p>
                             <p className="flex items-center">{track.points.length} points enregistrés 
                               {track.points.length > 0 && (
@@ -272,10 +274,18 @@ const RouteHistory = () => {
                               )}
                             </p>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleViewTrack(track.id)}
+                            className="text-blue-500 hover:text-blue-600"
+                          >
+                            <MapPin className="h-4 w-4 mr-1" />
+                            Afficher sur la carte
+                          </Button>
+                        </AccordionContent>
+                      </AccordionItem>
                     ))}
-                  </div>
+                  </Accordion>
                 )}
               </div>
             </div>
