@@ -74,8 +74,10 @@ export const useShipStore = create<ShipState>()(
       },
       
       getHistory: () => {
-        // Ensure dates are properly converted before sorting
+        // Get ships and ensure dates are properly converted
         const ships = get().ships.map(ensureDates);
+        
+        // Sort by detection time (newest first)
         return ships.sort((a, b) => 
           b.detectionTime.getTime() - a.detectionTime.getTime()
         );
@@ -105,7 +107,7 @@ export const useShipStore = create<ShipState>()(
             ...parsed,
             state: {
               ...parsed.state,
-              ships: parsed.state.ships.map(ensureDates),
+              ships: Array.isArray(parsed.state.ships) ? parsed.state.ships.map(ensureDates) : [],
               currentShip: parsed.state.currentShip ? ensureDates(parsed.state.currentShip) : null
             }
           };

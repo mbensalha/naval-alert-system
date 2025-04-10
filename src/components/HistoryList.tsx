@@ -42,20 +42,20 @@ const getClassificationColor = (classification: ShipClassification) => {
 };
 
 const HistoryList = () => {
-  // Use useState to store the ships instead of calling getHistory() directly in render
-  const [ships, setShips] = useState(useShipStore((state) => state.getHistory()));
+  // Use a simple state to store ships
+  const [ships, setShips] = useState([]);
   
-  // Update ships when store changes
+  // Get ships from store once on component mount, not during render
   useEffect(() => {
-    const updateShips = () => {
-      setShips(useShipStore.getState().getHistory());
-    };
+    const ships = useShipStore.getState().getHistory();
+    setShips(ships);
     
     // Subscribe to store changes
-    const unsubscribe = useShipStore.subscribe(updateShips);
-    
-    // Initial fetch
-    updateShips();
+    const unsubscribe = useShipStore.subscribe((state) => {
+      // Only update when the ships array changes
+      const updatedShips = state.getHistory();
+      setShips(updatedShips);
+    });
     
     // Cleanup subscription
     return () => unsubscribe();
