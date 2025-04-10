@@ -5,6 +5,7 @@ import { ShipClassification } from "@/types";
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Check, HelpCircle, Shield, AlertTriangle, Sailboat, Handshake } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const getClassificationIcon = (classification: ShipClassification) => {
   switch (classification) {
@@ -41,7 +42,24 @@ const getClassificationColor = (classification: ShipClassification) => {
 };
 
 const HistoryList = () => {
-  const ships = useShipStore((state) => state.getHistory());
+  // Use useState to store the ships instead of calling getHistory() directly in render
+  const [ships, setShips] = useState(useShipStore((state) => state.getHistory()));
+  
+  // Update ships when store changes
+  useEffect(() => {
+    const updateShips = () => {
+      setShips(useShipStore.getState().getHistory());
+    };
+    
+    // Subscribe to store changes
+    const unsubscribe = useShipStore.subscribe(updateShips);
+    
+    // Initial fetch
+    updateShips();
+    
+    // Cleanup subscription
+    return () => unsubscribe();
+  }, []);
   
   if (ships.length === 0) {
     return (

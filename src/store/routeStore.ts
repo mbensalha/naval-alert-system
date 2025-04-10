@@ -131,14 +131,22 @@ export const useRouteStore = create<RouteState>()(
     }),
     {
       name: 'route-storage',
-      // Adding custom serialization/deserialization for Date objects
-      serialize: (state) => JSON.stringify(state),
-      deserialize: (str) => {
-        const parsed = JSON.parse(str);
-        return {
-          ...parsed,
-          tracks: parsed.tracks.map(ensureDates)
-        };
+      // Adding custom storage to handle Date objects
+      storage: {
+        getItem: (name) => {
+          const str = localStorage.getItem(name);
+          if (!str) return null;
+          const parsed = JSON.parse(str);
+          return {
+            ...parsed,
+            state: {
+              ...parsed.state,
+              tracks: parsed.state.tracks.map(ensureDates)
+            }
+          };
+        },
+        setItem: (name, value) => localStorage.setItem(name, JSON.stringify(value)),
+        removeItem: (name) => localStorage.removeItem(name)
       }
     }
   )

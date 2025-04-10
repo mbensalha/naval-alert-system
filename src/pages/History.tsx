@@ -9,6 +9,9 @@ const History = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
+    // Update page title
+    document.title = "Historique des Détections | Système de Surveillance Navale";
+    
     // Update current time every second
     const timer = setInterval(() => {
       setCurrentTime(new Date());
