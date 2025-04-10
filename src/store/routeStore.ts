@@ -28,6 +28,19 @@ interface RouteState {
   clearTracks: () => void;
 }
 
+// Helper function to ensure dates are proper Date objects
+const ensureDates = (track: any): RouteTrack => {
+  return {
+    ...track,
+    startTime: new Date(track.startTime),
+    endTime: track.endTime ? new Date(track.endTime) : undefined,
+    points: track.points.map((point: any) => ({
+      ...point,
+      timestamp: new Date(point.timestamp)
+    }))
+  };
+};
+
 export const useRouteStore = create<RouteState>()(
   persist(
     (set, get) => ({
@@ -90,16 +103,22 @@ export const useRouteStore = create<RouteState>()(
       },
       
       getTracks: () => {
-        return get().tracks.sort((a, b) => 
-          b.startTime.getTime() - a.startTime.getTime()
-        );
+        // Ensure dates are properly converted before sorting
+        const tracks = get().tracks.map(ensureDates);
+        
+        return tracks.sort((a, b) => {
+          const bTime = b.startTime instanceof Date ? b.startTime.getTime() : new Date(b.startTime).getTime();
+          const aTime = a.startTime instanceof Date ? a.startTime.getTime() : new Date(a.startTime).getTime();
+          return bTime - aTime;
+        });
       },
       
       getActiveTrack: () => {
         const { tracks, activeTrackingId } = get();
         if (!activeTrackingId) return null;
         
-        return tracks.find(track => track.id === activeTrackingId) || null;
+        const track = tracks.find(track => track.id === activeTrackingId);
+        return track ? ensureDates(track) : null;
       },
       
       clearTracks: () => {
@@ -111,7 +130,16 @@ export const useRouteStore = create<RouteState>()(
       }
     }),
     {
-      name: 'route-storage'
+      name: 'route-storage',
+      // Adding custom serialization/deserialization for Date objects
+      serialize: (state) => JSON.stringify(state),
+      deserialize: (str) => {
+        const parsed = JSON.parse(str);
+        return {
+          ...parsed,
+          tracks: parsed.tracks.map(ensureDates)
+        };
+      }
     }
   )
 );
