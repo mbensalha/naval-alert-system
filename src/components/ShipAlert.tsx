@@ -6,6 +6,7 @@ import { useShipStore } from '@/store/shipStore';
 import { Bell } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { playDetectionAlert, speakMessage } from '@/services/audioService';
 
 const ShipAlert = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -26,6 +27,12 @@ const ShipAlert = () => {
       setIsVisible(true);
       setIsFlashing(true);
       
+      // Play audio alert when ship is detected
+      playDetectionAlert();
+      
+      // Speak alert message
+      speakMessage("Alerte! Navire militaire détecté! Veuillez le classifier immédiatement.");
+      
       // Show toast notification
       toast.warning("Un navire militaire détecté ! Classifier le", {
         description: "Veuillez classifier le navire détecté",
@@ -42,6 +49,9 @@ const ShipAlert = () => {
       classifyShip(classification);
       setIsVisible(false);
       setIsFlashing(false);
+      
+      // Speak classification message
+      speakMessage(`Navire classifié comme ${classification}`);
       
       toast.success(`Navire classifié comme ${classification}`, {
         duration: 3000,

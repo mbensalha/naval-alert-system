@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DetectedShip, ShipClassification } from '../types';
+import { playDetectionAlert } from '@/services/audioService';
 
 interface ShipState {
   ships: DetectedShip[];
@@ -33,6 +34,9 @@ export const useShipStore = create<ShipState>()(
           classification: null,
           screenshot: ""
         };
+        
+        // Play sound notification for detection
+        playDetectionAlert();
         
         set({ 
           alertActive: true,
