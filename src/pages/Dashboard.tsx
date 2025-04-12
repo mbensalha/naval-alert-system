@@ -20,7 +20,7 @@ const Dashboard = () => {
     }, 1000);
     
     // Connect to MQTT broker automatically
-    const brokerUrl = "mqtt://broker.emqx.io:1883"; // Updated broker URL
+    const brokerUrl = "broker.emqx.io"; // Use a simpler format, the service will add the protocol
     connect(brokerUrl);
     
     // Subscribe to position topic after a short delay to ensure connection is established

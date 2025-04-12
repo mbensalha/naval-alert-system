@@ -1,4 +1,3 @@
-
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -31,22 +30,65 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       existingClient.end();
     }
     
-    // Set MQTT connection options
-    const options: mqtt.IClientOptions = {
-      keepalive: 60,
-      connectTimeout: 10 * 1000, // 10 seconds
-      reconnectPeriod: 5000, // 5 seconds
-      // For WebSockets security
-      rejectUnauthorized: false,
-      protocol: brokerUrl.startsWith('wss://') ? 'wss' : 
-                brokerUrl.startsWith('ws://') ? 'ws' : undefined,
-    };
-    
-    console.log("Creating MQTT client with options:", options);
-    
     try {
+      // Parse broker URL to determine protocol
+      let protocol: string | undefined;
+      let url = brokerUrl;
+      
+      // Handle different protocols properly
+      if (brokerUrl.startsWith('mqtt://')) {
+        protocol = 'mqtt';
+        url = brokerUrl.replace('mqtt://', '');
+      } else if (brokerUrl.startsWith('ws://')) {
+        protocol = 'ws';
+        url = brokerUrl.replace('ws://', '');
+      } else if (brokerUrl.startsWith('wss://')) {
+        protocol = 'wss';
+        url = brokerUrl.replace('wss://', '');
+      } else if (brokerUrl.startsWith('mqtts://')) {
+        protocol = 'mqtts';
+        url = brokerUrl.replace('mqtts://', '');
+      } else {
+        // If no protocol is specified, default to mqtt
+        protocol = 'mqtt';
+        // Keep the URL as is if no protocol prefix
+        if (!brokerUrl.includes('://')) {
+          url = brokerUrl;
+        }
+      }
+      
+      // Extract hostname and port
+      let hostname = url;
+      let port = protocol === 'mqtt' ? 1883 : 
+                 protocol === 'mqtts' ? 8883 : 
+                 protocol === 'ws' ? 8083 : 
+                 protocol === 'wss' ? 8084 : 1883;
+                 
+      // Handle port in the URL
+      if (url.includes(':')) {
+        const parts = url.split(':');
+        hostname = parts[0];
+        port = parseInt(parts[1], 10);
+      }
+      
+      console.log(`Parsed MQTT connection: protocol=${protocol}, hostname=${hostname}, port=${port}`);
+      
+      // Set MQTT connection options
+      const options: mqtt.IClientOptions = {
+        protocol,
+        hostname,
+        port,
+        keepalive: 60,
+        connectTimeout: 10 * 1000, // 10 seconds
+        reconnectPeriod: 5000, // 5 seconds
+        // For WebSockets security
+        rejectUnauthorized: false,
+      };
+      
+      console.log("Creating MQTT client with options:", options);
+      
       // Connect to broker
-      const client = mqtt.connect(brokerUrl, options);
+      const client = mqtt.connect(options);
       
       client.on('connect', () => {
         console.log('Successfully connected to MQTT broker:', brokerUrl);
@@ -106,6 +148,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         console.log('MQTT client went offline');
         set({ connected: false });
       });
+      
     } catch (error) {
       console.error('Error creating MQTT client:', error);
       set({ client: null, connected: false });
