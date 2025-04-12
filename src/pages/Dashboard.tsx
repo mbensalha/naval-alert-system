@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -19,15 +20,12 @@ const Dashboard = () => {
     }, 1000);
     
     // Connect to MQTT broker automatically
-    const brokerUrl = "wss://test.mosquitto.org:8081"; // Using secure WebSocket connection
+    const brokerUrl = "mqtt://broker.emqx.io:1883"; // Updated broker URL
     connect(brokerUrl);
     
     // Subscribe to position topic after a short delay to ensure connection is established
     const subscriptionTimer = setTimeout(() => {
-      // Subscribe to Node-RED topic (esp32/gps_data)
-      subscribe("esp32/gps_data");
-      
-      // Also keep the original topic as fallback
+      // Subscribe to Node-RED topic (esp32/gps)
       subscribe("esp32/gps");
     }, 1500);
     

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
-  // Mettre à jour l'URL du broker pour correspondre à emqx.io
+  // Update default broker URL to match the screenshot
   const [brokerUrl, setBrokerUrl] = useState("mqtt://broker.emqx.io:1883");
   const [topic, setTopic] = useState("esp32/gps");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
