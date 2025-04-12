@@ -19,13 +19,14 @@ const Dashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
     
-    // Connect to MQTT broker automatically
-    const brokerUrl = "broker.emqx.io"; // Use a simpler format, the service will add the protocol
+    // Connect to MQTT broker automatically with secure WebSocket
+    // Use wss:// for secure WebSocket connection (HTTPS compatibility)
+    const brokerUrl = "wss://broker.emqx.io:8084"; 
     connect(brokerUrl);
     
     // Subscribe to position topic after a short delay to ensure connection is established
     const subscriptionTimer = setTimeout(() => {
-      // Subscribe to Node-RED topic (esp32/gps)
+      // Subscribe to ESP32 GPS topic
       subscribe("esp32/gps");
     }, 1500);
     

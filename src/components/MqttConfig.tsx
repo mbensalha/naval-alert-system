@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
-  // Update default broker URL to match the broker configuration
-  const [brokerUrl, setBrokerUrl] = useState("broker.emqx.io");
+  // Update default broker URL to use secure WebSocket
+  const [brokerUrl, setBrokerUrl] = useState("wss://broker.emqx.io:8084");
   const [topic, setTopic] = useState("esp32/gps");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
@@ -81,11 +81,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="broker.emqx.io"
+            placeholder="wss://broker.emqx.io:8084"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Entrez l'adresse du broker sans le protocole (ex: broker.emqx.io)
+            Utilisez wss:// pour une connexion WebSocket sécurisée (obligatoire pour HTTPS)
           </p>
         </div>
         
@@ -98,7 +98,7 @@ const MqttConfig = () => {
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Format JSON pour Node-RED: {`{"latitude": 48.856614, "longitude": 2.3522219, "speed": 15, "device_id": "ESP32"}`}
+            Format JSON pour l'ESP32: {`{"lat": 43.123456, "lng": 5.123456, "speed_kmh": 15.2, "speed_knots": 8.2}`}
           </p>
         </div>
         

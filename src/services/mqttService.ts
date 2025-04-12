@@ -1,4 +1,4 @@
-import mqtt from 'mqtt';
+import mqtt, { MqttProtocol } from 'mqtt';
 import { create } from 'zustand';
 
 interface MqttState {
@@ -32,7 +32,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     
     try {
       // Parse broker URL to determine protocol
-      let protocol: string | undefined;
+      let protocol: MqttProtocol = 'wss';
       let url = brokerUrl;
       
       // Handle different protocols properly
@@ -49,8 +49,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         protocol = 'mqtts';
         url = brokerUrl.replace('mqtts://', '');
       } else {
-        // If no protocol is specified, default to mqtt
-        protocol = 'mqtt';
+        // If no protocol is specified, default to wss for browser security
+        protocol = 'wss';
         // Keep the URL as is if no protocol prefix
         if (!brokerUrl.includes('://')) {
           url = brokerUrl;
@@ -62,7 +62,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       let port = protocol === 'mqtt' ? 1883 : 
                  protocol === 'mqtts' ? 8883 : 
                  protocol === 'ws' ? 8083 : 
-                 protocol === 'wss' ? 8084 : 1883;
+                 protocol === 'wss' ? 8084 : 8084;
                  
       // Handle port in the URL
       if (url.includes(':')) {

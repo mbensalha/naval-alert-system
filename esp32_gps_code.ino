@@ -1,3 +1,4 @@
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <TinyGPSPlus.h>
@@ -25,46 +26,42 @@ float kmphToKnots(float kmph) {
 
 void setup_wifi() {
   delay(10);
-  // We start by connecting to a WiFi network
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-
+  Serial.println("Connexion WiFi...");
   WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+  Serial.println("\n✅ Connecté au WiFi");
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("🔍 Test TCP vers broker...");
+  WiFiClient testClient;
+  if (testClient.connect(mqtt_server, 1883)) {
+    Serial.println("✅ Connexion TCP au broker OK !");
+    testClient.stop();
+  } else {
+    Serial.println("❌ Échec connexion TCP au broker (port bloqué ?)");
+  }
 }
 
 void reconnect() {
-  // Loop until we're reconnected
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    if (client.connect("ESP32Client")) {
-      Serial.println("connected");
-      // Subscribe
-      client.subscribe("esp32/test");
+    String clientId = "ESP32_" + String(random(1000, 9999));
+    Serial.print("🔄 Connexion MQTT...");
+    if (client.connect(clientId.c_str())) {
+      Serial.println("✅ Connecté au broker MQTT");
     } else {
-      Serial.print("failed, rc=");
+      Serial.print("❌ Échec, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
+      Serial.println(" ➡️ nouvelle tentative dans 10s");
+      delay(10000);
     }
   }
 }
 
 void setup() {
   Serial.begin(115200);
-  gpsSerial.begin(9600, SERIAL_8N1, 16, 17); // RX, TX
+  gpsSerial.begin(9600, SERIAL_8N1, 16, 17);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
 }
