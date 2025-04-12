@@ -33,7 +33,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     
     // Set MQTT connection options
     const options: mqtt.IClientOptions = {
-      keepalive: 60,
+      keepalive: 30,
       connectTimeout: 10 * 1000, // 10 seconds
       reconnectPeriod: 5000, // 5 seconds
       // For WebSockets security
@@ -62,12 +62,12 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         console.log(`Received MQTT message on topic ${topic}:`, messageStr);
         
         try {
-          if (topic.includes('gps')) {
+          if (topic.includes('gps') || topic.includes('position')) {
             console.log("Processing position data from topic:", topic);
             const data = JSON.parse(messageStr);
             console.log("Parsed MQTT position data:", data);
             
-            // Format adapté au flux Node-RED fourni
+            // Handle Node-RED format (latitude, longitude, speed, device_id)
             if (data.latitude !== undefined && data.longitude !== undefined) {
               console.log("Setting new position from Node-RED format:", { lat: data.latitude, long: data.longitude });
               set({
@@ -76,16 +76,22 @@ export const useMqttStore = create<MqttState>((set, get) => ({
                 deviceId: data.device_id || get().deviceId
               });
             }
-            // Gérer aussi le format alternatif au cas où
+            // Handle previous format (lat, lon/long)
             else if (data.lat !== undefined && (data.long !== undefined || data.lon !== undefined)) {
               const longitude = data.long !== undefined ? data.long : data.lon;
-              console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
+              console.log("Setting new position from original format:", { lat: data.lat, long: longitude });
               set({
                 lastPosition: { lat: data.lat, long: longitude },
                 speed: data.speed !== undefined ? data.speed : get().speed
               });
             } else {
               console.warn("MQTT message missing lat/long properties:", data);
+            }
+            
+            // Update speed separately if it exists
+            if (data.speed !== undefined) {
+              console.log("Setting new speed:", data.speed);
+              set({ speed: data.speed });
             }
           }
         } catch (error) {

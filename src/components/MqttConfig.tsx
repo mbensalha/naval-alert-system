@@ -8,9 +8,9 @@ import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
-  // Mettre à jour l'URL du broker pour correspondre à emqx.io
-  const [brokerUrl, setBrokerUrl] = useState("mqtt://broker.emqx.io:1883");
-  const [topic, setTopic] = useState("esp32/gps");
+  // Update default broker URL to use secure WebSocket
+  const [brokerUrl, setBrokerUrl] = useState("wss://test.mosquitto.org:8081");
+  const [topic, setTopic] = useState("esp32/gps_data");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
   // Display current connection status
@@ -81,11 +81,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="mqtt://broker.emqx.io:1883"
+            placeholder="wss://test.mosquitto.org:8081"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Format: mqtt://adresse:port (non-sécurisé) ou mqtts://adresse:port (pour TLS)
+            Format: wss://adresse:port (pour WebSocket sécurisé) ou mqtts://adresse:port (pour TLS)
           </p>
         </div>
         
@@ -94,7 +94,7 @@ const MqttConfig = () => {
           <Input 
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
-            placeholder="esp32/gps"
+            placeholder="esp32/gps_data"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">

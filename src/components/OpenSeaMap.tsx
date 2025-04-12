@@ -1,8 +1,7 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useMqttStore } from '@/services/mqttService';
 import { useShipStore } from '@/store/shipStore';
-import { Map, MapPin, Anchor, Gauge } from 'lucide-react';
+import { Map, MapPin, Anchor } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 const OpenSeaMap = () => {
@@ -10,7 +9,7 @@ const OpenSeaMap = () => {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [mapInitialized, setMapInitialized] = useState(false);
-  const { lastPosition, deviceId, speed } = useMqttStore();
+  const { lastPosition, deviceId } = useMqttStore();
   const { ships } = useShipStore();
 
   useEffect(() => {
@@ -58,12 +57,11 @@ const OpenSeaMap = () => {
         clearInterval(updateTimerRef.current);
       }
       
-      // Mise à jour immédiate puis périodiquement
-      updateMarkerPosition();
-      
       updateTimerRef.current = setInterval(() => {
         updateMarkerPosition();
       }, 3000);
+      
+      updateMarkerPosition();
     }
     
     return () => {
@@ -71,7 +69,7 @@ const OpenSeaMap = () => {
         clearInterval(updateTimerRef.current);
       }
     };
-  }, [lastPosition, deviceId, mapInitialized, speed]);
+  }, [lastPosition, deviceId, mapInitialized]);
 
   const updateMarkerPosition = () => {
     if (!lastPosition || !iframeRef.current) return;
@@ -80,7 +78,7 @@ const OpenSeaMap = () => {
     const { lat, long } = lastPosition;
     
     const markerLabel = deviceId ? 
-      `${deviceId} ${speed ? '(' + speed.toFixed(1) + ' km/h)' : ''}` : 
+      `${deviceId}` : 
       `Position GPS`;
     
     try {
@@ -94,7 +92,7 @@ const OpenSeaMap = () => {
           const currentUrl = new URL(iframeRef.current.src);
           const currentZoom = currentUrl.searchParams.get('zoom') || '14';
           
-          const baseUrl = `https://map.openseamap.org/?zoom=${currentZoom}&lat=${lat}&lon=${long}`;
+          const baseUrl = `https://map.openseamap.org/?zoom=${currentZoom}&lat=${currentUrl.searchParams.get('lat')}&lon=${currentUrl.searchParams.get('lon')}`;
           
           let shipMarkers = '';
           ships.forEach((ship, index) => {
@@ -107,7 +105,7 @@ const OpenSeaMap = () => {
           
           const tempIframe = document.createElement('iframe');
           tempIframe.style.display = 'none';
-          tempIframe.src = baseUrl + `&mtext=${encodeURIComponent(markerLabel)}&marker=ship` + shipMarkers;
+          tempIframe.src = baseUrl + `&mlat=${lat}&mlon=${long}&mtext=${encodeURIComponent(markerLabel)}&marker=ship` + shipMarkers;
           
           tempIframe.onload = () => {
             if (iframeRef.current) {
@@ -161,12 +159,6 @@ const OpenSeaMap = () => {
           )}
         </div>
       </CardContent>
-      {speed !== null && (
-        <div className="bg-navy-light/60 py-2 px-4 flex items-center">
-          <Gauge className="h-4 w-4 text-accent mr-2" />
-          <span className="text-sm">Vitesse: {speed.toFixed(1)} km/h</span>
-        </div>
-      )}
     </Card>
   );
 };

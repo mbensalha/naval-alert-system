@@ -2,11 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMqttStore } from "@/services/mqttService";
 import { useShipStore } from "@/store/shipStore";
-import { Compass, MapPinIcon, Gauge } from "lucide-react";
+import { Compass, MapPinIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const GpsPosition = () => {
-  const { lastPosition, connected, deviceId, speed } = useMqttStore();
+  const { lastPosition, connected, deviceId } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
@@ -15,7 +15,6 @@ const GpsPosition = () => {
     console.log("GpsPosition component - MQTT connected:", connected);
     console.log("GpsPosition component - MQTT lastPosition:", lastPosition);
     console.log("GpsPosition component - MQTT deviceId:", deviceId);
-    console.log("GpsPosition component - MQTT speed:", speed);
     console.log("GpsPosition component - Current ship:", currentShip);
     
     if (lastPosition) {
@@ -31,7 +30,7 @@ const GpsPosition = () => {
     } else {
       setPositionSource('none');
     }
-  }, [lastPosition, currentShip, connected, deviceId, speed]);
+  }, [lastPosition, currentShip, connected, deviceId]);
   
   return (
     <Card className="bg-navy text-white border-none shadow-lg">
@@ -43,8 +42,8 @@ const GpsPosition = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="py-4">
-        <div className="bg-navy-light rounded p-4 space-y-4">
-          <div className="flex items-center">
+        <div className="bg-navy-light rounded p-4">
+          <div className="flex items-center mb-2">
             <MapPinIcon className="h-5 w-5 text-accent mr-2" />
             <span className="text-white">Position actuelle</span>
             {positionSource === 'mqtt' && (
@@ -57,15 +56,6 @@ const GpsPosition = () => {
             </span>
           ) : (
             <span className="text-white/50 text-sm block">En attente de données GPS...</span>
-          )}
-          
-          {/* Affichage de la vitesse si disponible */}
-          {speed !== null && (
-            <div className="flex items-center mt-4">
-              <Gauge className="h-5 w-5 text-accent mr-2" />
-              <span className="text-white">Vitesse:</span>
-              <span className="text-white/80 ml-2">{speed.toFixed(1)} km/h</span>
-            </div>
           )}
         </div>
       </CardContent>
