@@ -2,145 +2,53 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useMqttStore } from '@/services/mqttService';
 import { useShipStore } from '@/store/shipStore';
-import { Map, MapPin, Anchor, Gauge } from 'lucide-react';
+import { Map, Anchor, Gauge } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 const OpenSeaMap = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const updateTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [mapInitialized, setMapInitialized] = useState(false);
   const { lastPosition, deviceId, speed } = useMqttStore();
   const { ships } = useShipStore();
+  const [mapUrl, setMapUrl] = useState<string>("");
 
+  // Update map URL when position changes
   useEffect(() => {
-    if (!mapContainerRef.current || mapInitialized) return;
-
-    if (!iframeRef.current) {
-      const iframe = document.createElement('iframe');
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.title = "OpenSeaMap";
+    if (lastPosition) {
+      const { lat, long } = lastPosition;
+      console.log("Updating OpenSeaMap with position:", { lat, long });
       
-      const defaultLat = 43.2965;
-      const defaultLong = 5.3698;
-      iframe.src = `https://map.openseamap.org/?zoom=10&lat=${defaultLat}&lon=${defaultLong}`;
+      // Base URL with position
+      let url = `https://map.openseamap.org/?zoom=14&lat=${lat}&lon=${long}`;
       
-      mapContainerRef.current.appendChild(iframe);
-      iframeRef.current = iframe;
-      setMapInitialized(true);
+      // Add marker for current position
+      url += `&marker=ship&mtext=${encodeURIComponent(deviceId || "Position GPS")}`;
       
-      iframe.onload = () => {
-        try {
-          const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
-          if (iframeDocument) {
-            const styleElement = iframeDocument.createElement('style');
-            styleElement.textContent = `
-              .ol-zoom, .ol-attribution, .ol-zoom-panel, .ol-rotate, .ol-scale-line {
-                display: none !important;
-              }
-            `;
-            iframeDocument.head.appendChild(styleElement);
-          }
-        } catch (e) {
-          console.error("Could not access iframe document: ", e);
+      // Add ship markers (if available)
+      ships.forEach((ship, index) => {
+        if (ship.position && ship.classification) {
+          const shipColor = getShipMarkerColor(ship.classification);
+          url += `&mlat${index+1}=${ship.position.lat}&mlon${index+1}=${ship.position.long}`;
+          url += `&mtext${index+1}=${encodeURIComponent(ship.classification)}&marker${index+1}=triangle&color${index+1}=${shipColor}`;
         }
-      };
+      });
       
-      console.log("Map initialized with default position");
+      setMapUrl(url);
+      console.log("Map URL updated:", url);
+    } else {
+      // Default position (Marseille)
+      setMapUrl("https://map.openseamap.org/?zoom=10&lat=43.2965&lon=5.3698");
     }
-  }, [mapInitialized]);
-
-  useEffect(() => {
-    if (mapInitialized && lastPosition) {
-      if (updateTimerRef.current) {
-        clearInterval(updateTimerRef.current);
-      }
-      
-      // Mise à jour immédiate puis périodiquement
-      updateMarkerPosition();
-      
-      updateTimerRef.current = setInterval(() => {
-        updateMarkerPosition();
-      }, 3000);
-    }
-    
-    return () => {
-      if (updateTimerRef.current) {
-        clearInterval(updateTimerRef.current);
-      }
-    };
-  }, [lastPosition, deviceId, mapInitialized, speed]);
-
-  const updateMarkerPosition = () => {
-    if (!lastPosition || !iframeRef.current) return;
-    
-    console.log("Updating marker position on OpenSeaMap:", lastPosition);
-    const { lat, long } = lastPosition;
-    
-    const markerLabel = deviceId ? 
-      `${deviceId} ${speed ? '(' + speed.toFixed(1) + ' km/h)' : ''}` : 
-      `Position GPS`;
-    
-    try {
-      const iframeDocument = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
-      if (iframeDocument) {
-        const iframeWindow = iframeRef.current.contentWindow;
-        
-        if (iframeWindow && iframeWindow.hasOwnProperty('ol')) {
-          console.log("OpenLayers API available, but not implemented");
-        } else {
-          const currentUrl = new URL(iframeRef.current.src);
-          const currentZoom = currentUrl.searchParams.get('zoom') || '14';
-          
-          const baseUrl = `https://map.openseamap.org/?zoom=${currentZoom}&lat=${lat}&lon=${long}`;
-          
-          let shipMarkers = '';
-          ships.forEach((ship, index) => {
-            if (ship.position && ship.classification) {
-              const shipColor = getShipMarkerColor(ship.classification);
-              shipMarkers += `&mlat${index+1}=${ship.position.lat}&mlon${index+1}=${ship.position.long}`;
-              shipMarkers += `&mtext${index+1}=${encodeURIComponent(ship.classification)}&marker${index+1}=triangle&color${index+1}=${shipColor}`;
-            }
-          });
-          
-          const tempIframe = document.createElement('iframe');
-          tempIframe.style.display = 'none';
-          tempIframe.src = baseUrl + `&mtext=${encodeURIComponent(markerLabel)}&marker=ship` + shipMarkers;
-          
-          tempIframe.onload = () => {
-            if (iframeRef.current) {
-              iframeRef.current.src = tempIframe.src;
-              document.body.removeChild(tempIframe);
-            }
-          };
-          
-          document.body.appendChild(tempIframe);
-          console.log("Updated marker via URL parameters");
-        }
-      }
-    } catch (e) {
-      console.error("Error updating marker:", e);
-    }
-  };
+  }, [lastPosition, ships, deviceId]);
 
   const getShipMarkerColor = (classification: string) => {
     switch (classification) {
-      case 'HOSTILE':
-        return 'red';
-      case 'SUSPECT':
-        return 'orange';
-      case 'INCONNU':
-        return 'blue';
-      case 'PRESUME AMI':
-        return 'purple';
-      case 'NEUTRE':
-        return 'gray';
-      case 'AMI':
-        return 'green';
-      default:
-        return 'blue';
+      case 'HOSTILE': return 'red';
+      case 'SUSPECT': return 'orange';
+      case 'INCONNU': return 'blue';
+      case 'PRESUME AMI': return 'purple';
+      case 'NEUTRE': return 'gray';
+      case 'AMI': return 'green';
+      default: return 'blue';
     }
   };
 
@@ -153,13 +61,23 @@ const OpenSeaMap = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 p-0 relative min-h-[400px]">
-        <div ref={mapContainerRef} className="w-full h-full">
-          {!lastPosition && (
-            <div className="absolute inset-0 flex items-center justify-center bg-navy-light/50 z-10">
-              <span className="text-white/50">En attente de position GPS...</span>
-            </div>
-          )}
-        </div>
+        {mapUrl ? (
+          <iframe 
+            src={mapUrl}
+            className="w-full h-full border-none" 
+            title="OpenSeaMap"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-navy-light/50">
+            <span className="text-white/50">Chargement de la carte...</span>
+          </div>
+        )}
+        
+        {!lastPosition && (
+          <div className="absolute inset-0 flex items-center justify-center bg-navy-light/50 z-10">
+            <span className="text-white/50">En attente de position GPS...</span>
+          </div>
+        )}
       </CardContent>
       {speed !== null && (
         <div className="bg-navy-light/60 py-2 px-4 flex items-center">
