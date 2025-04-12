@@ -105,29 +105,14 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         
         try {
           if (topic.includes('gps')) {
-            console.log("Processing position data from topic:", topic);
             const data = JSON.parse(messageStr);
-            console.log("Parsed MQTT position data:", data);
             
-            // Format adapté au flux Node-RED fourni
-            if (data.latitude !== undefined && data.longitude !== undefined) {
-              console.log("Setting new position from Node-RED format:", { lat: data.latitude, long: data.longitude });
+            if (data.lat !== undefined && data.lng !== undefined) {
               set({
-                lastPosition: { lat: data.latitude, long: data.longitude },
-                speed: data.speed !== undefined ? data.speed : get().speed,
+                lastPosition: { lat: data.lat, long: data.lng },
+                speed: data.speed_knots !== undefined ? data.speed_knots : get().speed,
                 deviceId: data.device_id || get().deviceId
               });
-            }
-            // Gérer aussi le format alternatif au cas où
-            else if (data.lat !== undefined && (data.long !== undefined || data.lon !== undefined)) {
-              const longitude = data.long !== undefined ? data.long : data.lon;
-              console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
-              set({
-                lastPosition: { lat: data.lat, long: longitude },
-                speed: data.speed !== undefined ? data.speed : get().speed
-              });
-            } else {
-              console.warn("MQTT message missing lat/long properties:", data);
             }
           }
         } catch (error) {
