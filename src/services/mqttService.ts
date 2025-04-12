@@ -1,4 +1,5 @@
-import mqtt, { MqttProtocol } from 'mqtt';
+
+import mqtt from 'mqtt';
 import { create } from 'zustand';
 
 interface MqttState {
@@ -30,65 +31,22 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       existingClient.end();
     }
     
+    // Set MQTT connection options
+    const options: mqtt.IClientOptions = {
+      keepalive: 60,
+      connectTimeout: 10 * 1000, // 10 seconds
+      reconnectPeriod: 5000, // 5 seconds
+      // For WebSockets security
+      rejectUnauthorized: false,
+      protocol: brokerUrl.startsWith('wss://') ? 'wss' : 
+                brokerUrl.startsWith('ws://') ? 'ws' : undefined,
+    };
+    
+    console.log("Creating MQTT client with options:", options);
+    
     try {
-      // Parse broker URL to determine protocol
-      let protocol: MqttProtocol = 'wss';
-      let url = brokerUrl;
-      
-      // Handle different protocols properly
-      if (brokerUrl.startsWith('mqtt://')) {
-        protocol = 'mqtt';
-        url = brokerUrl.replace('mqtt://', '');
-      } else if (brokerUrl.startsWith('ws://')) {
-        protocol = 'ws';
-        url = brokerUrl.replace('ws://', '');
-      } else if (brokerUrl.startsWith('wss://')) {
-        protocol = 'wss';
-        url = brokerUrl.replace('wss://', '');
-      } else if (brokerUrl.startsWith('mqtts://')) {
-        protocol = 'mqtts';
-        url = brokerUrl.replace('mqtts://', '');
-      } else {
-        // If no protocol is specified, default to wss for browser security
-        protocol = 'wss';
-        // Keep the URL as is if no protocol prefix
-        if (!brokerUrl.includes('://')) {
-          url = brokerUrl;
-        }
-      }
-      
-      // Extract hostname and port
-      let hostname = url;
-      let port = protocol === 'mqtt' ? 1883 : 
-                 protocol === 'mqtts' ? 8883 : 
-                 protocol === 'ws' ? 8083 : 
-                 protocol === 'wss' ? 8084 : 8084;
-                 
-      // Handle port in the URL
-      if (url.includes(':')) {
-        const parts = url.split(':');
-        hostname = parts[0];
-        port = parseInt(parts[1], 10);
-      }
-      
-      console.log(`Parsed MQTT connection: protocol=${protocol}, hostname=${hostname}, port=${port}`);
-      
-      // Set MQTT connection options
-      const options: mqtt.IClientOptions = {
-        protocol,
-        hostname,
-        port,
-        keepalive: 60,
-        connectTimeout: 10 * 1000, // 10 seconds
-        reconnectPeriod: 5000, // 5 seconds
-        // For WebSockets security
-        rejectUnauthorized: false,
-      };
-      
-      console.log("Creating MQTT client with options:", options);
-      
       // Connect to broker
-      const client = mqtt.connect(options);
+      const client = mqtt.connect(brokerUrl, options);
       
       client.on('connect', () => {
         console.log('Successfully connected to MQTT broker:', brokerUrl);
@@ -105,14 +63,29 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         
         try {
           if (topic.includes('gps')) {
+            console.log("Processing position data from topic:", topic);
             const data = JSON.parse(messageStr);
+            console.log("Parsed MQTT position data:", data);
             
-            if (data.lat !== undefined && data.lng !== undefined) {
+            // Format adapté au flux Node-RED fourni
+            if (data.latitude !== undefined && data.longitude !== undefined) {
+              console.log("Setting new position from Node-RED format:", { lat: data.latitude, long: data.longitude });
               set({
-                lastPosition: { lat: data.lat, long: data.lng },
-                speed: data.speed_knots !== undefined ? data.speed_knots : get().speed,
+                lastPosition: { lat: data.latitude, long: data.longitude },
+                speed: data.speed !== undefined ? data.speed : get().speed,
                 deviceId: data.device_id || get().deviceId
               });
+            }
+            // Gérer aussi le format alternatif au cas où
+            else if (data.lat !== undefined && (data.long !== undefined || data.lon !== undefined)) {
+              const longitude = data.long !== undefined ? data.long : data.lon;
+              console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
+              set({
+                lastPosition: { lat: data.lat, long: longitude },
+                speed: data.speed !== undefined ? data.speed : get().speed
+              });
+            } else {
+              console.warn("MQTT message missing lat/long properties:", data);
             }
           }
         } catch (error) {
@@ -133,7 +106,6 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         console.log('MQTT client went offline');
         set({ connected: false });
       });
-      
     } catch (error) {
       console.error('Error creating MQTT client:', error);
       set({ client: null, connected: false });

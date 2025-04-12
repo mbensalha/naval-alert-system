@@ -59,12 +59,12 @@ const GpsPosition = () => {
             <span className="text-white/50 text-sm block">En attente de données GPS...</span>
           )}
           
-          {/* Affichage de la vitesse en nœuds si disponible */}
+          {/* Affichage de la vitesse si disponible */}
           {speed !== null && (
             <div className="flex items-center mt-4">
               <Gauge className="h-5 w-5 text-accent mr-2" />
               <span className="text-white">Vitesse:</span>
-              <span className="text-white/80 ml-2">{speed.toFixed(1)} nœuds</span>
+              <span className="text-white/80 ml-2">{speed.toFixed(1)} km/h</span>
             </div>
           )}
         </div>

@@ -82,7 +82,7 @@ const OpenSeaMap = () => {
       {speed !== null && (
         <div className="bg-navy-light/60 py-2 px-4 flex items-center">
           <Gauge className="h-4 w-4 text-accent mr-2" />
-          <span className="text-sm">Vitesse: {speed.toFixed(1)} nœuds</span>
+          <span className="text-sm">Vitesse: {speed.toFixed(1)} km/h</span>
         </div>
       )}
     </Card>
