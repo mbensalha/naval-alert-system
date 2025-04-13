@@ -6,10 +6,14 @@ import DetectionPanel from '@/components/DetectionPanel';
 import CommandPanel from '@/components/CommandPanel';
 import ShipAlert from '@/components/ShipAlert';
 import { useMqttStore } from '@/services/mqttService';
+import { useShipStore } from '@/store/shipStore';
+import { useRouteStore } from '@/store/routeStore';
 
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { connect, subscribe } = useMqttStore();
+  const { connect, subscribe, setSimulatedPosition } = useMqttStore();
+  const { detectShip } = useShipStore();
+  const { startTracking, addTrackPoint } = useRouteStore();
   
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
@@ -28,12 +32,47 @@ const Dashboard = () => {
       // Subscribe to Node-RED topic (esp32/gps)
       subscribe("esp32/gps");
     }, 1500);
+
+    // Set up simulated position for demonstration
+    // Convert N37°08.557' E10°34.691' to decimal
+    // 37°08.557' = 37 + (8.557/60) ≈ 37.14262°
+    // 10°34.691' = 10 + (34.691/60) ≈ 10.57818°
+    const simulatedPosition = {
+      lat: 37.14262,
+      long: 10.57818,
+      speed: 10, // 10 knots
+      speed_knots: 10
+    };
+    
+    setSimulatedPosition(simulatedPosition);
+    
+    // Start tracking route for demonstration
+    startTracking();
+    
+    // Add route points at different intervals
+    const routeTimer = setInterval(() => {
+      // Slightly adjust position to simulate movement
+      simulatedPosition.lat += (Math.random() * 0.001) - 0.0005;
+      simulatedPosition.long += (Math.random() * 0.001) - 0.0005;
+      addTrackPoint({
+        lat: simulatedPosition.lat, 
+        long: simulatedPosition.long
+      });
+      setSimulatedPosition(simulatedPosition);
+    }, 5000);
+    
+    // Simulate ship detection after 10 seconds
+    const shipDetectionTimer = setTimeout(() => {
+      detectShip();
+    }, 10000);
     
     return () => {
       clearInterval(timer);
       clearTimeout(subscriptionTimer);
+      clearInterval(routeTimer);
+      clearTimeout(shipDetectionTimer);
     };
-  }, [connect, subscribe]);
+  }, [connect, subscribe, setSimulatedPosition, startTracking, addTrackPoint, detectShip]);
 
   // Format date and time
   const formattedDate = currentTime.toLocaleDateString('fr-FR', {
@@ -48,7 +87,8 @@ const Dashboard = () => {
     second: '2-digit'
   });
   
-  return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
+  return (
+    <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
       <div className="flex flex-1">
@@ -65,7 +105,8 @@ const Dashboard = () => {
       </div>
       
       <ShipAlert />
-    </div>;
+    </div>
+  );
 };
 
 export default Dashboard;

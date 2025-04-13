@@ -1,4 +1,3 @@
-
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -7,11 +6,14 @@ interface MqttState {
   connected: boolean;
   lastPosition: { lat: number; long: number } | null;
   speed: number | null;
+  speed_knots: number | null;
   deviceId: string | null;
+  simulationActive: boolean;
   connect: (brokerUrl: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
   unsubscribe: (topic: string) => void;
+  setSimulatedPosition: (position: { lat: number; long: number; speed?: number; speed_knots?: number }) => void;
 }
 
 export const useMqttStore = create<MqttState>((set, get) => ({
@@ -19,7 +21,9 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   connected: false,
   lastPosition: null,
   speed: null,
-  deviceId: null,
+  speed_knots: null,
+  deviceId: "DEMO-SIM-001",
+  simulationActive: false,
   
   connect: (brokerUrl: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl);
@@ -73,6 +77,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               set({
                 lastPosition: { lat: data.latitude, long: data.longitude },
                 speed: data.speed !== undefined ? data.speed : get().speed,
+                speed_knots: data.speed_knots !== undefined ? data.speed_knots : get().speed_knots,
                 deviceId: data.device_id || get().deviceId
               });
             }
@@ -82,7 +87,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
               set({
                 lastPosition: { lat: data.lat, long: longitude },
-                speed: data.speed !== undefined ? data.speed : get().speed
+                speed: data.speed !== undefined ? data.speed : get().speed,
+                speed_knots: data.speed_knots !== undefined ? data.speed_knots : get().speed_knots
               });
             } else {
               console.warn("MQTT message missing lat/long properties:", data);
@@ -143,5 +149,15 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       console.log(`Unsubscribing from MQTT topic: ${topic}`);
       client.unsubscribe(topic);
     }
+  },
+
+  setSimulatedPosition: (position) => {
+    console.log("Setting simulated position:", position);
+    set({
+      lastPosition: { lat: position.lat, long: position.long },
+      speed: position.speed || null,
+      speed_knots: position.speed_knots || position.speed || null,
+      simulationActive: true
+    });
   }
 }));

@@ -4,13 +4,17 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useShipStore } from "@/store/shipStore";
 import { Camera } from "lucide-react";
 import OpenSeaMap from "./OpenSeaMap";
+import GpsPosition from "./GpsPosition";
 
 const DetectionPanel = () => {
   const detectShip = useShipStore((state) => state.detectShip);
   
   return (
     <div className="grid grid-cols-2 gap-6 h-full animate-fade-in">
-      <OpenSeaMap />
+      <div className="flex flex-col gap-6">
+        <OpenSeaMap />
+        <GpsPosition />
+      </div>
       
       <Card className="bg-navy text-white border-none shadow-lg overflow-hidden flex flex-col">
         <CardHeader className="pb-2 border-b border-white/10">
@@ -21,11 +25,22 @@ const DetectionPanel = () => {
         </CardHeader>
         <CardContent className="flex-1 p-0">
           <div className="w-full h-full min-h-[340px] bg-navy-light flex flex-col items-center justify-center gap-4">
-            <div className="h-12 w-16 flex items-center justify-center border border-accent/50 rounded bg-navy-dark">
-              <Camera className="h-8 w-8 text-accent" />
+            <div className="w-full h-full relative">
+              <img 
+                src="/entrance-camera.jpg"
+                alt="Entrance camera"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-4 left-4 bg-navy/40 backdrop-blur-sm text-accent px-3 py-1 rounded-full text-sm">
+                Entrance camera
+              </div>
+              <div className="absolute top-4 right-4 flex items-center">
+                <span className="text-xs px-3 py-1 rounded-full bg-green-500/20 text-green-400 flex items-center">
+                  <span className="w-2 h-2 rounded-full bg-green-400 mr-2 animate-pulse"></span>
+                  Active
+                </span>
+              </div>
             </div>
-            <p className="text-accent">Entrance camera</p>
-            <span className="text-xs px-3 py-1 rounded-full bg-accent/20 text-accent">Active</span>
           </div>
         </CardContent>
         <CardFooter className="p-4">

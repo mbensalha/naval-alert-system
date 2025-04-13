@@ -6,7 +6,7 @@ import { Compass, MapPinIcon, Gauge } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const GpsPosition = () => {
-  const { lastPosition, connected, deviceId, speed } = useMqttStore();
+  const { lastPosition, connected, deviceId, speed, speed_knots } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
@@ -16,6 +16,7 @@ const GpsPosition = () => {
     console.log("GpsPosition component - MQTT lastPosition:", lastPosition);
     console.log("GpsPosition component - MQTT deviceId:", deviceId);
     console.log("GpsPosition component - MQTT speed:", speed);
+    console.log("GpsPosition component - MQTT speed_knots:", speed_knots);
     console.log("GpsPosition component - Current ship:", currentShip);
     
     if (lastPosition) {
@@ -31,7 +32,19 @@ const GpsPosition = () => {
     } else {
       setPositionSource('none');
     }
-  }, [lastPosition, currentShip, connected, deviceId, speed]);
+  }, [lastPosition, currentShip, connected, deviceId, speed, speed_knots]);
+  
+  // Convert decimal coordinates to DMS (Degrees, Minutes, Seconds) format
+  const formatCoordinates = (coord: number, isLatitude: boolean): string => {
+    const absolute = Math.abs(coord);
+    const degrees = Math.floor(absolute);
+    const minutes = (absolute - degrees) * 60;
+    const direction = isLatitude
+      ? coord >= 0 ? 'N' : 'S'
+      : coord >= 0 ? 'E' : 'W';
+    
+    return `${direction}${degrees}°${minutes.toFixed(3)}'`;
+  };
   
   return (
     <Card className="bg-navy text-white border-none shadow-lg">
@@ -52,19 +65,24 @@ const GpsPosition = () => {
             )}
           </div>
           {positionSource !== 'none' ? (
-            <span className="text-white/80 block">
-              {displayPosition.lat.toFixed(6)}° N, {displayPosition.long.toFixed(6)}° E
-            </span>
+            <div className="space-y-1">
+              <span className="text-white/80 block">
+                {displayPosition.lat.toFixed(6)}° N, {displayPosition.long.toFixed(6)}° E
+              </span>
+              <span className="text-white/80 block text-sm">
+                {formatCoordinates(displayPosition.lat, true)}, {formatCoordinates(displayPosition.long, false)}
+              </span>
+            </div>
           ) : (
             <span className="text-white/50 text-sm block">En attente de données GPS...</span>
           )}
           
           {/* Affichage de la vitesse si disponible */}
-          {speed !== null && (
+          {speed_knots !== null && (
             <div className="flex items-center mt-4">
               <Gauge className="h-5 w-5 text-accent mr-2" />
               <span className="text-white">Vitesse:</span>
-              <span className="text-white/80 ml-2">{speed.toFixed(1)} km/h</span>
+              <span className="text-white/80 ml-2">{speed_knots.toFixed(1)} nœuds</span>
             </div>
           )}
         </div>
