@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DetectedShip, ShipClassification } from '../types';
@@ -9,34 +10,6 @@ const ensureDates = (ship: any): DetectedShip => {
     ...ship,
     detectionTime: new Date(ship.detectionTime)
   };
-};
-
-// Create initial demo ships for history
-const createInitialShips = (): DetectedShip[] => {
-  const now = new Date();
-  
-  return [
-    {
-      id: "demo-ship-1",
-      detectionTime: new Date(now.getTime() - 1000 * 60 * 30), // 30 minutes ago
-      position: {
-        lat: 37.16,
-        long: 10.59
-      },
-      classification: "HOSTILE",
-      screenshot: "/enemy-ship.jpg"
-    },
-    {
-      id: "demo-ship-2",
-      detectionTime: new Date(now.getTime() - 1000 * 60 * 120), // 2 hours ago
-      position: {
-        lat: 37.12,
-        long: 10.54
-      },
-      classification: "AMI",
-      screenshot: "/friendly-ship.jpg"
-    }
-  ];
 };
 
 interface ShipState {
@@ -53,7 +26,7 @@ interface ShipState {
 export const useShipStore = create<ShipState>()(
   persist(
     (set, get) => ({
-      ships: createInitialShips(),
+      ships: [],
       alertActive: false,
       currentShip: null,
       
@@ -63,8 +36,8 @@ export const useShipStore = create<ShipState>()(
           id: crypto.randomUUID(),
           detectionTime: new Date(),
           position: {
-            lat: 37.14262 + (Math.random() * 0.02 - 0.01),
-            long: 10.57818 + (Math.random() * 0.02 - 0.01)
+            lat: 36.5 + Math.random() * 3,
+            long: -6.2 + Math.random() * 2
           },
           classification: null,
           screenshot: ""

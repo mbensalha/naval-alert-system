@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { WifiIcon, SignalIcon } from "lucide-react";
 
 const MqttConfig = () => {
-  // Update default broker URL to match the screenshot
-  const [brokerUrl, setBrokerUrl] = useState("mqtt://broker.emqx.io:1883");
+  // Update default broker URL to match the broker configuration
+  const [brokerUrl, setBrokerUrl] = useState("broker.emqx.io");
   const [topic, setTopic] = useState("esp32/gps");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
@@ -81,11 +81,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="mqtt://broker.emqx.io:1883"
+            placeholder="broker.emqx.io"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Format: mqtt://adresse:port (non-sécurisé) ou mqtts://adresse:port (pour TLS)
+            Entrez l'adresse du broker sans le protocole (ex: broker.emqx.io)
           </p>
         </div>
         

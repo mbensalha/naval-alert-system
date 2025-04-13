@@ -6,14 +6,11 @@ interface MqttState {
   connected: boolean;
   lastPosition: { lat: number; long: number } | null;
   speed: number | null;
-  speed_knots: number | null;
   deviceId: string | null;
-  simulationActive: boolean;
   connect: (brokerUrl: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
   unsubscribe: (topic: string) => void;
-  setSimulatedPosition: (position: { lat: number; long: number; speed?: number; speed_knots?: number }) => void;
 }
 
 export const useMqttStore = create<MqttState>((set, get) => ({
@@ -21,9 +18,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   connected: false,
   lastPosition: null,
   speed: null,
-  speed_knots: null,
-  deviceId: "DEMO-SIM-001",
-  simulationActive: false,
+  deviceId: null,
   
   connect: (brokerUrl: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl);
@@ -35,22 +30,65 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       existingClient.end();
     }
     
-    // Set MQTT connection options
-    const options: mqtt.IClientOptions = {
-      keepalive: 60,
-      connectTimeout: 10 * 1000, // 10 seconds
-      reconnectPeriod: 5000, // 5 seconds
-      // For WebSockets security
-      rejectUnauthorized: false,
-      protocol: brokerUrl.startsWith('wss://') ? 'wss' : 
-                brokerUrl.startsWith('ws://') ? 'ws' : undefined,
-    };
-    
-    console.log("Creating MQTT client with options:", options);
-    
     try {
+      // Parse broker URL to determine protocol
+      let protocol: string | undefined;
+      let url = brokerUrl;
+      
+      // Handle different protocols properly
+      if (brokerUrl.startsWith('mqtt://')) {
+        protocol = 'mqtt';
+        url = brokerUrl.replace('mqtt://', '');
+      } else if (brokerUrl.startsWith('ws://')) {
+        protocol = 'ws';
+        url = brokerUrl.replace('ws://', '');
+      } else if (brokerUrl.startsWith('wss://')) {
+        protocol = 'wss';
+        url = brokerUrl.replace('wss://', '');
+      } else if (brokerUrl.startsWith('mqtts://')) {
+        protocol = 'mqtts';
+        url = brokerUrl.replace('mqtts://', '');
+      } else {
+        // If no protocol is specified, default to mqtt
+        protocol = 'mqtt';
+        // Keep the URL as is if no protocol prefix
+        if (!brokerUrl.includes('://')) {
+          url = brokerUrl;
+        }
+      }
+      
+      // Extract hostname and port
+      let hostname = url;
+      let port = protocol === 'mqtt' ? 1883 : 
+                 protocol === 'mqtts' ? 8883 : 
+                 protocol === 'ws' ? 8083 : 
+                 protocol === 'wss' ? 8084 : 1883;
+                 
+      // Handle port in the URL
+      if (url.includes(':')) {
+        const parts = url.split(':');
+        hostname = parts[0];
+        port = parseInt(parts[1], 10);
+      }
+      
+      console.log(`Parsed MQTT connection: protocol=${protocol}, hostname=${hostname}, port=${port}`);
+      
+      // Set MQTT connection options
+      const options: mqtt.IClientOptions = {
+        protocol,
+        hostname,
+        port,
+        keepalive: 60,
+        connectTimeout: 10 * 1000, // 10 seconds
+        reconnectPeriod: 5000, // 5 seconds
+        // For WebSockets security
+        rejectUnauthorized: false,
+      };
+      
+      console.log("Creating MQTT client with options:", options);
+      
       // Connect to broker
-      const client = mqtt.connect(brokerUrl, options);
+      const client = mqtt.connect(options);
       
       client.on('connect', () => {
         console.log('Successfully connected to MQTT broker:', brokerUrl);
@@ -77,7 +115,6 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               set({
                 lastPosition: { lat: data.latitude, long: data.longitude },
                 speed: data.speed !== undefined ? data.speed : get().speed,
-                speed_knots: data.speed_knots !== undefined ? data.speed_knots : get().speed_knots,
                 deviceId: data.device_id || get().deviceId
               });
             }
@@ -87,8 +124,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
               set({
                 lastPosition: { lat: data.lat, long: longitude },
-                speed: data.speed !== undefined ? data.speed : get().speed,
-                speed_knots: data.speed_knots !== undefined ? data.speed_knots : get().speed_knots
+                speed: data.speed !== undefined ? data.speed : get().speed
               });
             } else {
               console.warn("MQTT message missing lat/long properties:", data);
@@ -112,6 +148,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         console.log('MQTT client went offline');
         set({ connected: false });
       });
+      
     } catch (error) {
       console.error('Error creating MQTT client:', error);
       set({ client: null, connected: false });
@@ -149,15 +186,5 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       console.log(`Unsubscribing from MQTT topic: ${topic}`);
       client.unsubscribe(topic);
     }
-  },
-
-  setSimulatedPosition: (position) => {
-    console.log("Setting simulated position:", position);
-    set({
-      lastPosition: { lat: position.lat, long: position.long },
-      speed: position.speed || null,
-      speed_knots: position.speed_knots || position.speed || null,
-      simulationActive: true
-    });
   }
 }));

@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -40,47 +41,11 @@ const ensureDates = (track: any): RouteTrack => {
   };
 };
 
-// Create demo route track
-const createDemoTrack = (): RouteTrack[] => {
-  const now = new Date();
-  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-  
-  // Base position
-  const basePosition = {
-    lat: 37.14,
-    long: 10.57
-  };
-
-  // Generate 20 points along a simulated path
-  const demoPoints: RoutePoint[] = Array.from({ length: 20 }).map((_, index) => {
-    // Create a curved path
-    const progress = index / 19; // 0 to 1
-    
-    // Add a small sine wave to create curves in the path
-    const curveFactor = Math.sin(progress * Math.PI * 2) * 0.005;
-    
-    return {
-      lat: basePosition.lat + (progress * 0.02) + curveFactor,
-      long: basePosition.long + (progress * 0.015) - curveFactor,
-      timestamp: new Date(yesterday.getTime() + (index * 10 * 60 * 1000))
-    };
-  });
-  
-  // Create demo track
-  return [{
-    id: "demo-track-1",
-    name: `Route du ${yesterday.toLocaleDateString('fr-FR')}`,
-    startTime: demoPoints[0].timestamp,
-    endTime: demoPoints[demoPoints.length - 1].timestamp,
-    points: demoPoints
-  }];
-};
-
 export const useRouteStore = create<RouteState>()(
   persist(
     (set, get) => ({
       activeTrackingId: null,
-      tracks: createDemoTrack(),
+      tracks: [],
       isTracking: false,
       
       startTracking: () => {

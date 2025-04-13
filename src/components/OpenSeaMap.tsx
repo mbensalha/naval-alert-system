@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 const OpenSeaMap = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const { lastPosition, deviceId, speed, speed_knots } = useMqttStore();
+  const { lastPosition, deviceId, speed } = useMqttStore();
   const { ships } = useShipStore();
   const [mapUrl, setMapUrl] = useState<string>("");
 
@@ -79,10 +79,10 @@ const OpenSeaMap = () => {
           </div>
         )}
       </CardContent>
-      {speed_knots !== null && (
+      {speed !== null && (
         <div className="bg-navy-light/60 py-2 px-4 flex items-center">
           <Gauge className="h-4 w-4 text-accent mr-2" />
-          <span className="text-sm">Vitesse: {speed_knots.toFixed(1)} nœuds</span>
+          <span className="text-sm">Vitesse: {speed.toFixed(1)} km/h</span>
         </div>
       )}
     </Card>
