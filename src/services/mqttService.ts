@@ -1,6 +1,8 @@
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
+type MqttProtocol = 'mqtt' | 'mqtts' | 'ws' | 'wss';
+
 interface MqttState {
   client: mqtt.MqttClient | null;
   connected: boolean;
@@ -32,7 +34,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     
     try {
       // Parse broker URL to determine protocol
-      let protocol: string | undefined;
+      let protocol: MqttProtocol = 'mqtt';
       let url = brokerUrl;
       
       // Handle different protocols properly
