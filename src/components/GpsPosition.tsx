@@ -4,6 +4,7 @@ import { useMqttStore } from "@/services/mqttService";
 import { useShipStore } from "@/store/shipStore";
 import { Compass, MapPinIcon, Gauge } from "lucide-react";
 import { useEffect, useState } from "react";
+import { formatCoordinate, kmhToMph } from "@/utils/formatUtils";
 
 const GpsPosition = () => {
   const { lastPosition, connected, deviceId, speed } = useMqttStore();
@@ -53,7 +54,7 @@ const GpsPosition = () => {
           </div>
           {positionSource !== 'none' ? (
             <span className="text-white/80 block">
-              {displayPosition.lat.toFixed(6)}° N, {displayPosition.long.toFixed(6)}° E
+              {formatCoordinate(displayPosition.lat, true)} {formatCoordinate(displayPosition.long, false)}
             </span>
           ) : (
             <span className="text-white/50 text-sm block">En attente de données GPS...</span>
@@ -64,7 +65,7 @@ const GpsPosition = () => {
             <div className="flex items-center mt-4">
               <Gauge className="h-5 w-5 text-accent mr-2" />
               <span className="text-white">Vitesse:</span>
-              <span className="text-white/80 ml-2">{speed.toFixed(1)} km/h</span>
+              <span className="text-white/80 ml-2">{kmhToMph(speed).toFixed(1)} mph</span>
             </div>
           )}
         </div>

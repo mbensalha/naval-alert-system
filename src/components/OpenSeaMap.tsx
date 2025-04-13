@@ -4,6 +4,7 @@ import { useMqttStore } from '@/services/mqttService';
 import { useShipStore } from '@/store/shipStore';
 import { Map, Anchor, Gauge } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
+import { formatCoordinate, kmhToMph } from '@/utils/formatUtils';
 
 const OpenSeaMap = () => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -79,10 +80,18 @@ const OpenSeaMap = () => {
           </div>
         )}
       </CardContent>
-      {speed !== null && (
-        <div className="bg-navy-light/60 py-2 px-4 flex items-center">
-          <Gauge className="h-4 w-4 text-accent mr-2" />
-          <span className="text-sm">Vitesse: {speed.toFixed(1)} km/h</span>
+      {lastPosition && (
+        <div className="bg-navy-light/60 py-2 px-4 flex flex-col text-sm">
+          <div className="flex items-center">
+            <span className="text-accent mr-2">Position:</span>
+            <span>{formatCoordinate(lastPosition.lat, true)} {formatCoordinate(lastPosition.long, false)}</span>
+          </div>
+          {speed !== null && (
+            <div className="flex items-center mt-1">
+              <Gauge className="h-4 w-4 text-accent mr-2" />
+              <span>Vitesse: {kmhToMph(speed).toFixed(1)} mph</span>
+            </div>
+          )}
         </div>
       )}
     </Card>

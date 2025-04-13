@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Gauge } from "lucide-react";
 import GpsPosition from "./GpsPosition";
 import { useMqttStore } from "@/services/mqttService";
+import { kmhToMph } from "@/utils/formatUtils";
 
 const CommandPanel = () => {
   const { speed } = useMqttStore();
@@ -23,7 +24,7 @@ const CommandPanel = () => {
         <CardContent className="py-4">
           <div className="bg-navy-light rounded p-4 flex items-center justify-center">
             {speed !== null ? (
-              <span className="text-white/80">{speed.toFixed(1)} km/h</span>
+              <span className="text-white/80">{kmhToMph(speed).toFixed(1)} mph</span>
             ) : (
               <span className="text-white/50">En attente de données...</span>
             )}
