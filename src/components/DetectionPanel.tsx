@@ -86,14 +86,15 @@ const DetectionPanel = () => {
             CAMERA
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 p-0">
+        <CardContent className="flex-1 p-0 relative">
           <div className="w-full h-full min-h-[340px] bg-navy-light flex flex-col items-center justify-center gap-4">
             {cameraActive ? (
               <video 
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain"
+                style={{ minHeight: "100%", maxHeight: "100%" }}
               />
             ) : (
               <>
@@ -117,6 +118,12 @@ const DetectionPanel = () => {
               </>
             )}
           </div>
+          
+          {cameraActive && (
+            <div className="absolute bottom-2 left-2 bg-green-500 px-2 py-1 rounded-full text-xs font-semibold animate-pulse">
+              Caméra active
+            </div>
+          )}
         </CardContent>
         <CardFooter className="p-4">
           <Button 
