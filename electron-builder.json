@@ -1,0 +1,17 @@
+
+{
+  "appId": "com.naval.alert",
+  "productName": "Naval Alert System",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "linux": {
+    "target": ["AppImage"],
+    "category": "Utility"
+  },
+  "extends": null
+}
