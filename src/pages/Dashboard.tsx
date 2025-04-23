@@ -9,7 +9,6 @@ import { useMqttStore } from '@/services/mqttService';
 
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const { connect, subscribe } = useMqttStore();
   
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
@@ -19,21 +18,13 @@ const Dashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
     
-    // Connect to MQTT broker automatically
-    const brokerUrl = "broker.emqx.io"; // Use a simpler format, the service will add the protocol
-    connect(brokerUrl);
-    
-    // Subscribe to position topic after a short delay to ensure connection is established
-    const subscriptionTimer = setTimeout(() => {
-      // Subscribe to Node-RED topic (esp32/gps)
-      subscribe("esp32/gps");
-    }, 1500);
+    // Note: We no longer automatically connect to the MQTT broker
+    // The connection will be established from the Settings page
     
     return () => {
       clearInterval(timer);
-      clearTimeout(subscriptionTimer);
     };
-  }, [connect, subscribe]);
+  }, []);
 
   // Format date and time
   const formattedDate = currentTime.toLocaleDateString('fr-FR', {
@@ -50,6 +41,11 @@ const Dashboard = () => {
   
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
+      
+      <div className="bg-[#03224c] text-white py-2 px-6 flex justify-between items-center shadow-md">
+        <span>Système de Surveillance Navale</span>
+        <span>{formattedDate} - {formattedTime}</span>
+      </div>
       
       <div className="flex flex-1">
         <Sidebar />

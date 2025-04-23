@@ -1,3 +1,4 @@
+
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -9,7 +10,7 @@ interface MqttState {
   lastPosition: { lat: number; long: number } | null;
   speed: number | null;
   deviceId: string | null;
-  connect: (brokerUrl: string) => void;
+  connect: (brokerUrl: string, port?: number, username?: string, password?: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
   unsubscribe: (topic: string) => void;
@@ -22,8 +23,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   speed: null,
   deviceId: null,
   
-  connect: (brokerUrl: string) => {
-    console.log("Connecting to MQTT broker:", brokerUrl);
+  connect: (brokerUrl: string, port?: number, username?: string, password?: string) => {
+    console.log("Connecting to MQTT broker:", brokerUrl, "port:", port || "default");
     
     // Disconnect existing client if there is one
     const existingClient = get().client;
@@ -59,27 +60,30 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         }
       }
       
-      // Extract hostname and port
+      // Extract hostname and port from URL if provided
       let hostname = url;
-      let port = protocol === 'mqtt' ? 1883 : 
-                 protocol === 'mqtts' ? 8883 : 
-                 protocol === 'ws' ? 8083 : 
-                 protocol === 'wss' ? 8084 : 1883;
+      let mqttPort = port || 
+                  (protocol === 'mqtt' ? 1883 : 
+                   protocol === 'mqtts' ? 8883 : 
+                   protocol === 'ws' ? 8083 : 
+                   protocol === 'wss' ? 8084 : 1883);
                  
       // Handle port in the URL
       if (url.includes(':')) {
         const parts = url.split(':');
         hostname = parts[0];
-        port = parseInt(parts[1], 10);
+        if (!port) { // Only use port from URL if not explicitly provided
+          mqttPort = parseInt(parts[1], 10);
+        }
       }
       
-      console.log(`Parsed MQTT connection: protocol=${protocol}, hostname=${hostname}, port=${port}`);
+      console.log(`MQTT connection details: protocol=${protocol}, hostname=${hostname}, port=${mqttPort}`);
       
       // Set MQTT connection options
       const options: mqtt.IClientOptions = {
         protocol,
         hostname,
-        port,
+        port: mqttPort,
         keepalive: 60,
         connectTimeout: 10 * 1000, // 10 seconds
         reconnectPeriod: 5000, // 5 seconds
@@ -87,13 +91,20 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         rejectUnauthorized: false,
       };
       
+      // Add authentication if provided
+      if (username || password) {
+        options.username = username;
+        options.password = password;
+        console.log("Using authentication for MQTT connection");
+      }
+      
       console.log("Creating MQTT client with options:", options);
       
       // Connect to broker
       const client = mqtt.connect(options);
       
       client.on('connect', () => {
-        console.log('Successfully connected to MQTT broker:', brokerUrl);
+        console.log('Successfully connected to MQTT broker:', hostname);
         set({ client, connected: true });
       });
       

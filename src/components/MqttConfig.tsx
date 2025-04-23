@@ -5,12 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useMqttStore } from "@/services/mqttService";
 import { toast } from "sonner";
-import { WifiIcon, SignalIcon } from "lucide-react";
+import { WifiIcon, SignalIcon, ServerIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const MqttConfig = () => {
-  // Update default broker URL to match the broker configuration
-  const [brokerUrl, setBrokerUrl] = useState("broker.emqx.io");
+  // Update default broker to be more flexible for local servers
+  const [brokerUrl, setBrokerUrl] = useState("localhost");
+  const [brokerPort, setBrokerPort] = useState("1883");
   const [topic, setTopic] = useState("esp32/gps");
+  const [useAuth, setUseAuth] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
   
   // Display current connection status
@@ -38,8 +43,16 @@ const MqttConfig = () => {
       // Disconnect any existing connection first
       disconnect();
       
+      // Parse port number
+      const portNumber = brokerPort ? parseInt(brokerPort, 10) : undefined;
+      
       // Connect to the broker with the new URL
-      connect(brokerUrl);
+      connect(
+        brokerUrl, 
+        portNumber,
+        useAuth ? username : undefined,
+        useAuth ? password : undefined
+      );
       
       if (topic) {
         console.log("Will subscribe to topic after connection:", topic);
@@ -81,11 +94,24 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="broker.emqx.io"
+            placeholder="localhost ou 192.168.1.X"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Entrez l'adresse du broker sans le protocole (ex: broker.emqx.io)
+            Entrez l'adresse du broker (ex: localhost, 192.168.1.100, etc.)
+          </p>
+        </div>
+        
+        <div className="space-y-2">
+          <label className="text-sm text-white/80">Port</label>
+          <Input 
+            value={brokerPort}
+            onChange={(e) => setBrokerPort(e.target.value)}
+            placeholder="1883"
+            className="bg-navy-light text-white border-accent"
+          />
+          <p className="text-xs text-white/60">
+            Port du broker (par défaut: 1883 pour MQTT, 8883 pour MQTTS)
           </p>
         </div>
         
@@ -98,9 +124,49 @@ const MqttConfig = () => {
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Format JSON pour Node-RED: {`{"latitude": 48.856614, "longitude": 2.3522219, "speed": 15, "device_id": "ESP32"}`}
+            Format JSON attendu: {`{"latitude": 48.856614, "longitude": 2.3522219, "speed": 15, "device_id": "ESP32"}`}
           </p>
         </div>
+        
+        <div className="flex items-center space-x-2 pt-2">
+          <Checkbox 
+            id="useAuth" 
+            checked={useAuth} 
+            onCheckedChange={(checked) => setUseAuth(checked === true)}
+            className="bg-navy-light border-accent"
+          />
+          <label 
+            htmlFor="useAuth" 
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Utiliser l'authentification
+          </label>
+        </div>
+        
+        {useAuth && (
+          <div className="space-y-4 pt-2 border-t border-white/10">
+            <div className="space-y-2">
+              <label className="text-sm text-white/80">Nom d'utilisateur</label>
+              <Input 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Nom d'utilisateur"
+                className="bg-navy-light text-white border-accent"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm text-white/80">Mot de passe</label>
+              <Input 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                type="password"
+                placeholder="Mot de passe"
+                className="bg-navy-light text-white border-accent"
+              />
+            </div>
+          </div>
+        )}
         
         <Button 
           onClick={handleConnect}
@@ -112,7 +178,10 @@ const MqttConfig = () => {
               Connecté
             </span>
           ) : (
-            "Connecter"
+            <span className="flex items-center">
+              <ServerIcon className="mr-2 h-4 w-4" />
+              Se connecter
+            </span>
           )}
         </Button>
         
