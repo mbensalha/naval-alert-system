@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useMqttStore } from "@/services/mqttService";
 import { toast } from "sonner";
-import { WifiIcon, SignalIcon, ServerIcon, InfoIcon } from "lucide-react";
+import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const MqttConfig = () => {
