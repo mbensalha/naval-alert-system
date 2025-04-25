@@ -9,14 +9,27 @@ import { WifiIcon, SignalIcon, ServerIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const MqttConfig = () => {
-  // Update default broker to be more flexible for local servers
-  const [brokerUrl, setBrokerUrl] = useState("localhost");
+  // Pre-configure for test.mosquitto.org
+  const [brokerUrl, setBrokerUrl] = useState("test.mosquitto.org");
   const [brokerPort, setBrokerPort] = useState("1883");
   const [topic, setTopic] = useState("esp32/gps");
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  
   const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
+  
+  // Auto-connect to MQTT broker on component mount
+  useEffect(() => {
+    if (!connected) {
+      handleConnect();
+    }
+    
+    return () => {
+      console.log("MqttConfig component unmounting, cleaning up connection");
+      disconnect();
+    };
+  }, []);
   
   // Display current connection status
   useEffect(() => {
@@ -24,11 +37,6 @@ const MqttConfig = () => {
       console.log("MQTT connected status:", connected);
       console.log("Current MQTT lastPosition:", lastPosition);
     }
-    
-    // Cleanup on component unmount
-    return () => {
-      console.log("MqttConfig component unmounting, cleaning up connection");
-    };
   }, [connected, lastPosition]);
   
   const handleConnect = () => {
