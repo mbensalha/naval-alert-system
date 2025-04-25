@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +8,9 @@ import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw } from "lucide-re
 import { Checkbox } from "@/components/ui/checkbox";
 
 const MqttConfig = () => {
-  // Pre-configure for test.mosquitto.org
-  const [brokerUrl, setBrokerUrl] = useState("test.mosquitto.org");
+  const [brokerUrl, setBrokerUrl] = useState("");
   const [brokerPort, setBrokerPort] = useState("1883");
-  const [topic, setTopic] = useState("esp32/gps");
+  const [topic, setTopic] = useState("");
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -20,19 +18,15 @@ const MqttConfig = () => {
   
   const { connect, subscribe, disconnect, connected, lastPosition, lastUpdate } = useMqttStore();
   
-  // Auto-connect to MQTT broker on component mount
+  // Nettoyer la connexion lors du démontage du composant
   useEffect(() => {
-    if (!connected) {
-      handleConnect();
-    }
-    
     return () => {
       console.log("MqttConfig component unmounting, cleaning up connection");
       disconnect();
     };
   }, []);
   
-  // Display current connection status
+  // Afficher l'état de la connexion actuelle
   useEffect(() => {
     if (connected) {
       console.log("MQTT connected status:", connected);
@@ -51,13 +45,13 @@ const MqttConfig = () => {
       console.log("Attempting to connect to MQTT broker:", brokerUrl);
       setIsConnecting(true);
       
-      // Disconnect any existing connection first
+      // Déconnecter toute connexion existante d'abord
       disconnect();
       
-      // Parse port number
+      // Parser le numéro de port
       const portNumber = brokerPort ? parseInt(brokerPort, 10) : undefined;
       
-      // Connect to the broker with the new URL
+      // Se connecter au broker avec la nouvelle URL
       connect(
         brokerUrl, 
         portNumber,
@@ -67,7 +61,7 @@ const MqttConfig = () => {
       
       if (topic) {
         console.log("Will subscribe to topic after connection:", topic);
-        // Wait a moment before subscribing to ensure connection is established
+        // Attendre un moment avant de s'abonner pour s'assurer que la connexion est établie
         setTimeout(() => {
           setIsConnecting(false);
           if (useMqttStore.getState().connected) {
@@ -78,7 +72,7 @@ const MqttConfig = () => {
               description: `Abonné au topic: ${topic}`,
             });
             
-            // Test connection with a follow-up check
+            // Vérifier la connexion après un moment
             setTimeout(() => {
               const state = useMqttStore.getState();
               console.log("Follow-up connection check:", {
