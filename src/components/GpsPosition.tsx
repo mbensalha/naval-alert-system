@@ -2,12 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMqttStore } from "@/services/mqttService";
 import { useShipStore } from "@/store/shipStore";
-import { Compass, MapPinIcon, Gauge } from "lucide-react";
+import { Compass, MapPinIcon, Gauge, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatCoordinate, kmhToMph } from "@/utils/formatUtils";
 
 const GpsPosition = () => {
-  const { lastPosition, connected, deviceId, speed } = useMqttStore();
+  const { lastPosition, connected, deviceId, speed, lastUpdate } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
@@ -17,6 +17,7 @@ const GpsPosition = () => {
     console.log("GpsPosition component - MQTT lastPosition:", lastPosition);
     console.log("GpsPosition component - MQTT deviceId:", deviceId);
     console.log("GpsPosition component - MQTT speed:", speed);
+    console.log("GpsPosition component - MQTT lastUpdate:", lastUpdate);
     console.log("GpsPosition component - Current ship:", currentShip);
     
     if (lastPosition) {
@@ -32,7 +33,16 @@ const GpsPosition = () => {
     } else {
       setPositionSource('none');
     }
-  }, [lastPosition, currentShip, connected, deviceId, speed]);
+  }, [lastPosition, currentShip, connected, deviceId, speed, lastUpdate]);
+  
+  // Format the last update time if available
+  const formattedLastUpdate = lastUpdate 
+    ? lastUpdate.toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      })
+    : null;
   
   return (
     <Card className="bg-navy text-white border-none shadow-lg">
@@ -45,13 +55,22 @@ const GpsPosition = () => {
       </CardHeader>
       <CardContent className="py-4">
         <div className="bg-navy-light rounded p-4 space-y-4">
-          <div className="flex items-center">
-            <MapPinIcon className="h-5 w-5 text-accent mr-2" />
-            <span className="text-white">Position actuelle</span>
-            {positionSource === 'mqtt' && (
-              <span className="text-xs text-green-400 ml-2">(MQTT)</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <MapPinIcon className="h-5 w-5 text-accent mr-2" />
+              <span className="text-white">Position actuelle</span>
+              {positionSource === 'mqtt' && (
+                <span className="text-xs text-green-400 ml-2">(MQTT)</span>
+              )}
+            </div>
+            
+            {connected ? (
+              <span className="text-xs text-green-400">Connecté</span>
+            ) : (
+              <span className="text-xs text-red-400">Déconnecté</span>
             )}
           </div>
+          
           {positionSource !== 'none' ? (
             <span className="text-white/80 block">
               {formatCoordinate(displayPosition.lat, true)} {formatCoordinate(displayPosition.long, false)}
@@ -66,6 +85,14 @@ const GpsPosition = () => {
               <Gauge className="h-5 w-5 text-accent mr-2" />
               <span className="text-white">Vitesse:</span>
               <span className="text-white/80 ml-2">{kmhToMph(speed).toFixed(1)} mph</span>
+            </div>
+          )}
+          
+          {/* Affichage du dernier moment de mise à jour */}
+          {formattedLastUpdate && (
+            <div className="flex items-center mt-2 text-xs text-white/60">
+              <Clock className="h-3 w-3 mr-1" />
+              <span>Dernière mise à jour: {formattedLastUpdate}</span>
             </div>
           )}
         </div>

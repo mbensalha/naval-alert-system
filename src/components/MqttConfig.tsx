@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useMqttStore } from "@/services/mqttService";
 import { toast } from "sonner";
-import { WifiIcon, SignalIcon, ServerIcon } from "lucide-react";
+import { WifiIcon, SignalIcon, ServerIcon, InfoIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const MqttConfig = () => {
@@ -16,8 +16,9 @@ const MqttConfig = () => {
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
   
-  const { connect, subscribe, disconnect, connected, lastPosition } = useMqttStore();
+  const { connect, subscribe, disconnect, connected, lastPosition, lastUpdate } = useMqttStore();
   
   // Auto-connect to MQTT broker on component mount
   useEffect(() => {
@@ -36,8 +37,9 @@ const MqttConfig = () => {
     if (connected) {
       console.log("MQTT connected status:", connected);
       console.log("Current MQTT lastPosition:", lastPosition);
+      console.log("Current MQTT lastUpdate:", lastUpdate);
     }
-  }, [connected, lastPosition]);
+  }, [connected, lastPosition, lastUpdate]);
   
   const handleConnect = () => {
     if (!brokerUrl) {
@@ -47,6 +49,7 @@ const MqttConfig = () => {
     
     try {
       console.log("Attempting to connect to MQTT broker:", brokerUrl);
+      setIsConnecting(true);
       
       // Disconnect any existing connection first
       disconnect();
@@ -66,6 +69,7 @@ const MqttConfig = () => {
         console.log("Will subscribe to topic after connection:", topic);
         // Wait a moment before subscribing to ensure connection is established
         setTimeout(() => {
+          setIsConnecting(false);
           if (useMqttStore.getState().connected) {
             subscribe(topic);
             console.log("Subscribed to topic:", topic);
@@ -73,6 +77,23 @@ const MqttConfig = () => {
             toast.success("Connecté au broker MQTT", {
               description: `Abonné au topic: ${topic}`,
             });
+            
+            // Test connection with a follow-up check
+            setTimeout(() => {
+              const state = useMqttStore.getState();
+              console.log("Follow-up connection check:", {
+                connected: state.connected,
+                lastPosition: state.lastPosition,
+                lastUpdate: state.lastUpdate
+              });
+              
+              if (!state.lastPosition && state.connected) {
+                toast.info("Connecté mais aucune donnée reçue", {
+                  description: "Vérifiez que des données sont publiées sur ce topic"
+                });
+              }
+            }, 5000);
+            
           } else {
             toast.error("Échec de connexion au broker MQTT", {
               description: "La connexion n'a pas pu être établie",
@@ -81,12 +102,21 @@ const MqttConfig = () => {
         }, 1500);
       }
     } catch (error) {
+      setIsConnecting(false);
       console.error("MQTT connection error:", error);
       toast.error("Erreur de connexion au broker MQTT", {
         description: String(error),
       });
     }
   };
+  
+  const formattedLastUpdate = lastUpdate 
+    ? lastUpdate.toLocaleTimeString('fr-FR', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit' 
+      })
+    : null;
   
   return (
     <Card className="bg-navy text-white border-none shadow-lg">
@@ -179,11 +209,17 @@ const MqttConfig = () => {
         <Button 
           onClick={handleConnect}
           className="w-full bg-navy-light border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
+          disabled={isConnecting}
         >
-          {connected ? (
+          {isConnecting ? (
+            <span className="flex items-center">
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Connexion en cours...
+            </span>
+          ) : connected ? (
             <span className="flex items-center">
               <SignalIcon className="mr-2 h-4 w-4" />
-              Connecté
+              Reconnecter
             </span>
           ) : (
             <span className="flex items-center">
@@ -200,6 +236,13 @@ const MqttConfig = () => {
           </div>
         )}
         
+        {connected && !lastPosition && (
+          <div className="p-2 bg-amber-900/30 rounded border border-amber-500/30 flex items-center">
+            <InfoIcon className="h-4 w-4 text-amber-400 mr-2" />
+            <span className="text-amber-400 text-sm">Connecté mais aucune donnée GPS reçue</span>
+          </div>
+        )}
+        
         {connected && lastPosition && (
           <div className="p-3 bg-navy-light rounded">
             <p className="text-sm mb-1">Dernière position reçue:</p>
@@ -207,7 +250,7 @@ const MqttConfig = () => {
               Latitude: {lastPosition.lat.toFixed(6)}° N, Longitude: {lastPosition.long.toFixed(6)}° E
             </p>
             <p className="text-xs text-white/60 mt-2">
-              Dernière mise à jour: {new Date().toLocaleTimeString()}
+              Dernière mise à jour: {formattedLastUpdate || new Date().toLocaleTimeString()}
             </p>
           </div>
         )}

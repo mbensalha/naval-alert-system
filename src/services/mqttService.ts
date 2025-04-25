@@ -10,6 +10,7 @@ interface MqttState {
   lastPosition: { lat: number; long: number } | null;
   speed: number | null;
   deviceId: string | null;
+  lastUpdate: Date | null;
   connect: (brokerUrl: string, port?: number, username?: string, password?: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
@@ -22,6 +23,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   lastPosition: null,
   speed: null,
   deviceId: null,
+  lastUpdate: null,
   
   connect: (brokerUrl: string, port?: number, username?: string, password?: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl, "port:", port || "default");
@@ -89,6 +91,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         reconnectPeriod: 5000, // 5 seconds
         // For WebSockets security
         rejectUnauthorized: false,
+        clean: true, // Clean session
       };
       
       // Add authentication if provided
@@ -128,7 +131,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               set({
                 lastPosition: { lat: data.latitude, long: data.longitude },
                 speed: data.speed !== undefined ? data.speed : get().speed,
-                deviceId: data.device_id || get().deviceId
+                deviceId: data.device_id || get().deviceId,
+                lastUpdate: new Date()
               });
             }
             // Gérer aussi le format alternatif au cas où
@@ -137,7 +141,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
               set({
                 lastPosition: { lat: data.lat, long: longitude },
-                speed: data.speed !== undefined ? data.speed : get().speed
+                speed: data.speed !== undefined ? data.speed : get().speed,
+                lastUpdate: new Date()
               });
             } else {
               console.warn("MQTT message missing lat/long properties:", data);
