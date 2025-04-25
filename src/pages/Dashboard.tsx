@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -6,10 +5,8 @@ import DetectionPanel from '@/components/DetectionPanel';
 import CommandPanel from '@/components/CommandPanel';
 import ShipAlert from '@/components/ShipAlert';
 import { useMqttStore } from '@/services/mqttService';
-
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -17,10 +14,10 @@ const Dashboard = () => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
+
     // Note: We no longer automatically connect to the MQTT broker
     // The connection will be established from the Settings page
-    
+
     return () => {
       clearInterval(timer);
     };
@@ -32,20 +29,15 @@ const Dashboard = () => {
     month: '2-digit',
     year: 'numeric'
   });
-  
   const formattedTime = currentTime.toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   });
-  
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
-      <div className="bg-[#03224c] text-white py-2 px-6 flex justify-between items-center shadow-md">
-        <span>Système de Surveillance Navale</span>
-        <span>{formattedDate} - {formattedTime}</span>
-      </div>
+      
       
       <div className="flex flex-1">
         <Sidebar />
@@ -63,5 +55,4 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
-
 export default Dashboard;

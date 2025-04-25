@@ -15,7 +15,7 @@ const Header = () => {
   }, []);
   return <header className="bg-[#03224c] text-white py-3 px-4 flex justify-between items-center shadow-md animate-fade-in">
       <div className="flex items-center gap-4">
-        <div className="bg-logo w-12 h-12 bg-contain bg-no-repeat bg-center rounded-full bg-inherit" />
+        <div className="bg-logo w-12 h-12 bg-contain bg-no-repeat bg-center rounded-full bg-transparent" />
         <h1 className="text-lg font-semibold tracking-wide">Système de Surveillance Navale</h1>
       </div>
       
