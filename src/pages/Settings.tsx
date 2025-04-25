@@ -4,10 +4,8 @@ import MqttConfig from '@/components/MqttConfig';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
 const Settings = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  
   useEffect(() => {
     document.title = "Configuration - Système de Surveillance Navale";
 
@@ -47,12 +45,7 @@ const Settings = () => {
           </div>
           
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-            <Alert className="mb-6">
-              <AlertDescription>
-                Cette application est configurée pour se connecter automatiquement au broker MQTT test.mosquitto.org 
-                et s'abonner au topic esp32/gps. Le format de données attendu est : {`{ "latitude": number, "longitude": number, "speed": number, "device_id": string }`}
-              </AlertDescription>
-            </Alert>
+            
             <div className="grid grid-cols-1 gap-6">
               <MqttConfig />
             </div>
@@ -61,5 +54,4 @@ const Settings = () => {
       </div>
     </div>;
 };
-
 export default Settings;
