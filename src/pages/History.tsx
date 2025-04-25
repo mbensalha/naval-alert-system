@@ -30,10 +30,7 @@ const History = () => {
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
-      <div className="bg-[#03224c] text-white py-2 px-6 flex justify-between items-center shadow-md">
-        <span>Système de Surveillance Navale</span>
-        <span>{formattedDate} - {formattedTime}</span>
-      </div>
+      
       
       <div className="flex flex-1">
         <Sidebar />
