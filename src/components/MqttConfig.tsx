@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +9,9 @@ import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw } from "lucide-re
 import { Checkbox } from "@/components/ui/checkbox";
 
 const MqttConfig = () => {
-  const [brokerUrl, setBrokerUrl] = useState("");
+  const [brokerUrl, setBrokerUrl] = useState("test.mosquitto.org");
   const [brokerPort, setBrokerPort] = useState("1883");
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState("esp32/gps");
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -130,7 +131,7 @@ const MqttConfig = () => {
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Entrez l'adresse du broker (ex: localhost, 192.168.1.100, etc.)
+            Entrez l'adresse du broker (ex: test.mosquitto.org, localhost, etc.)
           </p>
         </div>
         

@@ -79,6 +79,9 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         }
       }
       
+      // Remove trailing slash from hostname if present
+      hostname = hostname.replace(/\/$/, '');
+      
       console.log(`MQTT connection details: protocol=${protocol}, hostname=${hostname}, port=${mqttPort}`);
       
       // Set MQTT connection options

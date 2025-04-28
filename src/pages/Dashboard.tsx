@@ -29,13 +29,14 @@ const Dashboard = () => {
 
   const handleReconnect = () => {
     try {
-      // Reconnect to MQTT broker with default settings
+      // Reconnect to MQTT broker with saved settings
       disconnect();
-      setTimeout(() => {
-        connect("test.mosquitto.org", 1883);
-        subscribe("esp32/gps");
-        toast.info("Tentative de reconnexion MQTT en cours...");
-      }, 500);
+      toast.info("Tentative de reconnexion MQTT en cours...");
+      
+      // This will now prompt the user to go to settings and connect manually
+      toast.info("Veuillez configurer la connexion MQTT dans les paramètres", {
+        description: "Accédez à la page Configuration pour vous connecter au broker MQTT"
+      });
     } catch (error) {
       console.error("Error reconnecting to MQTT:", error);
       toast.error("Erreur lors de la reconnexion MQTT");
@@ -94,7 +95,7 @@ const Dashboard = () => {
           {!connected && !lastPosition && (
             <div className="bg-amber-100 border border-amber-300 mb-6 p-3 rounded flex items-center text-sm">
               <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />
-              <span>Aucune donnée GPS disponible. Veuillez vérifier la connexion MQTT dans les paramètres.</span>
+              <span>Aucune donnée GPS disponible. Veuillez configurer la connexion MQTT dans les paramètres.</span>
             </div>
           )}
           
