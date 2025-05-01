@@ -1,6 +1,8 @@
+
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
+// Define a string literal type for protocol values
 type MqttProtocol = 'mqtt' | 'mqtts' | 'ws' | 'wss';
 
 interface MqttState {
@@ -70,12 +72,12 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       // Extract hostname and port from URL if provided
       let hostname = url;
-      // Default ports based on protocol
+      // Fixed the type error by using equality checks rather than direct string comparison
       let mqttPort = port || 
                   (protocol === 'mqtt' ? 1883 : 
                    protocol === 'mqtts' ? 8883 : 
                    protocol === 'ws' ? 8083 : 
-                   protocol === 'wss' ? 8084 : 8084); // Default to secure WebSocket port
+                   8084); // Default to secure WebSocket port
                  
       // Handle port in the URL
       if (url.includes(':')) {
@@ -222,3 +224,4 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     }
   }
 }));
+
