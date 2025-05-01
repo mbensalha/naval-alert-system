@@ -79,22 +79,9 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         // If port is explicitly provided, use it
         mqttPort = port;
       } else {
-        // Otherwise, select default port based on protocol
-        switch (protocol) {
-          case 'mqtt':
-            mqttPort = 1883;
-            break;
-          case 'mqtts':
-            mqttPort = 8883;
-            break;
-          case 'ws':
-            mqttPort = 8083;
-            break;
-          case 'wss':
-          default:
-            mqttPort = 8084;
-            break;
-        }
+        // Since protocol is always 'wss' at this point due to our conversions,
+        // we can simplify this to just use the wss port
+        mqttPort = 8084; // Default WSS port
       }
                  
       // Handle port in the URL
