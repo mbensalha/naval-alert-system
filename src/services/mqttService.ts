@@ -1,4 +1,3 @@
-
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -37,25 +36,32 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     
     try {
       // Parse broker URL to determine protocol
-      let protocol: MqttProtocol = 'mqtt';
+      // Default to WSS for browser security with HTTPS pages
+      let protocol: MqttProtocol = 'wss';
       let url = brokerUrl;
       
       // Handle different protocols properly
       if (brokerUrl.startsWith('mqtt://')) {
-        protocol = 'mqtt';
+        // For HTTPS pages, force WSS instead of MQTT
+        protocol = 'wss';
         url = brokerUrl.replace('mqtt://', '');
+        console.log("Converted mqtt:// to wss:// for browser security");
       } else if (brokerUrl.startsWith('ws://')) {
-        protocol = 'ws';
+        // For HTTPS pages, force WSS instead of WS
+        protocol = 'wss';
         url = brokerUrl.replace('ws://', '');
+        console.log("Converted ws:// to wss:// for browser security");
       } else if (brokerUrl.startsWith('wss://')) {
         protocol = 'wss';
         url = brokerUrl.replace('wss://', '');
       } else if (brokerUrl.startsWith('mqtts://')) {
-        protocol = 'mqtts';
+        // For browser, still use WSS
+        protocol = 'wss';
         url = brokerUrl.replace('mqtts://', '');
+        console.log("Converted mqtts:// to wss:// for browser compatibility");
       } else {
-        // If no protocol is specified, default to mqtt
-        protocol = 'mqtt';
+        // If no protocol is specified, default to wss
+        protocol = 'wss';
         // Keep the URL as is if no protocol prefix
         if (!brokerUrl.includes('://')) {
           url = brokerUrl;
@@ -64,11 +70,12 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       // Extract hostname and port from URL if provided
       let hostname = url;
+      // Default ports based on protocol
       let mqttPort = port || 
                   (protocol === 'mqtt' ? 1883 : 
                    protocol === 'mqtts' ? 8883 : 
                    protocol === 'ws' ? 8083 : 
-                   protocol === 'wss' ? 8084 : 1883);
+                   protocol === 'wss' ? 8084 : 8084); // Default to secure WebSocket port
                  
       // Handle port in the URL
       if (url.includes(':')) {
@@ -83,6 +90,10 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       hostname = hostname.replace(/\/$/, '');
       
       console.log(`MQTT connection details: protocol=${protocol}, hostname=${hostname}, port=${mqttPort}`);
+      
+      // For browser environments, construct the WebSocket URL
+      const wsUrl = `${protocol}://${hostname}:${mqttPort}`;
+      console.log("Using WebSocket URL:", wsUrl);
       
       // Set MQTT connection options
       const options: mqtt.IClientOptions = {
@@ -106,8 +117,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       console.log("Creating MQTT client with options:", options);
       
-      // Connect to broker
-      const client = mqtt.connect(options);
+      // Connect to broker using WebSocket URL for browser environments
+      const client = mqtt.connect(wsUrl, options);
       
       client.on('connect', () => {
         console.log('Successfully connected to MQTT broker:', hostname);

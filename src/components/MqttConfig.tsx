@@ -1,21 +1,22 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useMqttStore } from "@/services/mqttService";
 import { toast } from "sonner";
-import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw } from "lucide-react";
+import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw, ShieldIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const MqttConfig = () => {
   const [brokerUrl, setBrokerUrl] = useState("test.mosquitto.org");
-  const [brokerPort, setBrokerPort] = useState("1883");
+  const [brokerPort, setBrokerPort] = useState("8084"); // Port WSS par défaut
   const [topic, setTopic] = useState("esp32/gps");
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
+  const [protocol, setProtocol] = useState("wss"); // WebSocket Secure par défaut
   
   const { connect, subscribe, disconnect, connected, lastPosition, lastUpdate } = useMqttStore();
   
@@ -35,6 +36,19 @@ const MqttConfig = () => {
       console.log("Current MQTT lastUpdate:", lastUpdate);
     }
   }, [connected, lastPosition, lastUpdate]);
+
+  // Ajuster le port en fonction du protocole sélectionné
+  useEffect(() => {
+    if (protocol === "mqtt") {
+      setBrokerPort("1883");
+    } else if (protocol === "mqtts") {
+      setBrokerPort("8883");
+    } else if (protocol === "ws") {
+      setBrokerPort("8083");
+    } else if (protocol === "wss") {
+      setBrokerPort("8084");
+    }
+  }, [protocol]);
   
   const handleConnect = () => {
     if (!brokerUrl) {
@@ -43,7 +57,7 @@ const MqttConfig = () => {
     }
     
     try {
-      console.log("Attempting to connect to MQTT broker:", brokerUrl);
+      console.log("Attempting to connect to MQTT broker:", brokerUrl, "using protocol:", protocol);
       setIsConnecting(true);
       
       // Déconnecter toute connexion existante d'abord
@@ -52,9 +66,13 @@ const MqttConfig = () => {
       // Parser le numéro de port
       const portNumber = brokerPort ? parseInt(brokerPort, 10) : undefined;
       
+      // Construire l'URL avec le protocole
+      const fullBrokerUrl = `${protocol}://${brokerUrl}`;
+      console.log("Full broker URL:", fullBrokerUrl);
+      
       // Se connecter au broker avec la nouvelle URL
       connect(
-        brokerUrl, 
+        fullBrokerUrl, 
         portNumber,
         useAuth ? username : undefined,
         useAuth ? password : undefined
@@ -123,15 +141,41 @@ const MqttConfig = () => {
       </CardHeader>
       <CardContent className="py-4 space-y-4">
         <div className="space-y-2">
+          <label className="text-sm text-white/80">Protocole</label>
+          <Select 
+            value={protocol} 
+            onValueChange={setProtocol}
+          >
+            <SelectTrigger className="bg-navy-light text-white border-accent">
+              <SelectValue placeholder="Sélectionnez un protocole" />
+            </SelectTrigger>
+            <SelectContent className="bg-navy-light text-white border-accent">
+              <SelectItem value="wss">
+                <div className="flex items-center">
+                  <ShieldIcon className="w-4 h-4 mr-2" />
+                  <span>WebSocket Sécurisé (wss://)</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="ws">WebSocket (ws://)</SelectItem>
+              <SelectItem value="mqtt">MQTT (mqtt://)</SelectItem>
+              <SelectItem value="mqtts">MQTT Sécurisé (mqtts://)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-white/60">
+            Pour les pages HTTPS, utilisez WebSocket Sécurisé (wss://)
+          </p>
+        </div>
+        
+        <div className="space-y-2">
           <label className="text-sm text-white/80">Broker URL</label>
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="localhost ou 192.168.1.X"
+            placeholder="ex: test.mosquitto.org"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Entrez l'adresse du broker (ex: test.mosquitto.org, localhost, etc.)
+            Entrez l'adresse du broker sans le protocole (ex: test.mosquitto.org)
           </p>
         </div>
         
@@ -140,11 +184,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerPort}
             onChange={(e) => setBrokerPort(e.target.value)}
-            placeholder="1883"
+            placeholder="8084"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Port du broker (par défaut: 1883 pour MQTT, 8883 pour MQTTS)
+            Port du broker (8084 pour WSS, 8083 pour WS, 1883 pour MQTT, 8883 pour MQTTS)
           </p>
         </div>
         
@@ -227,7 +271,7 @@ const MqttConfig = () => {
         {connected && (
           <div className="flex items-center justify-center p-2 bg-green-900/30 rounded border border-green-500/30">
             <SignalIcon className="h-4 w-4 text-green-400 mr-2" />
-            <span className="text-green-400 text-sm">Connecté au broker MQTT</span>
+            <span className="text-green-400 text-sm">Connecté au broker MQTT ({protocol}://)</span>
           </div>
         )}
         
