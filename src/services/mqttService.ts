@@ -72,7 +72,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       // Extract hostname and port from URL if provided
       let hostname = url;
       
-      // Determine the port based on the protocol using safe type checking
+      // Determine the port based on the protocol
       let mqttPort: number;
       
       if (port) {
@@ -80,16 +80,20 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         mqttPort = port;
       } else {
         // Otherwise, select default port based on protocol
-        // Using if/else instead of direct comparison for type safety
-        if (protocol === 'mqtt') {
-          mqttPort = 1883;
-        } else if (protocol === 'mqtts') {
-          mqttPort = 8883;
-        } else if (protocol === 'ws') {
-          mqttPort = 8083;
-        } else {
-          // Default for 'wss' and any other case
-          mqttPort = 8084;
+        switch (protocol) {
+          case 'mqtt':
+            mqttPort = 1883;
+            break;
+          case 'mqtts':
+            mqttPort = 8883;
+            break;
+          case 'ws':
+            mqttPort = 8083;
+            break;
+          case 'wss':
+          default:
+            mqttPort = 8084;
+            break;
         }
       }
                  
