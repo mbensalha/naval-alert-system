@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -22,13 +21,13 @@ const Dashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
     
-    // Automatically connect to MQTT broker when dashboard loads
+    // Automatically connect to local MQTT broker when dashboard loads
     if (!connected) {
       console.log("Dashboard: Auto-connecting to MQTT broker...");
       try {
-        // Utiliser wss:// au lieu de mqtt:// pour la sécurité du navigateur
-        const secure = window.location.protocol === 'https:';
-        connect(secure ? "wss://test.mosquitto.org" : "ws://test.mosquitto.org", secure ? 8084 : 8083);
+        // Use localhost for Raspberry Pi deployment
+        connect("mqtt://localhost", 1883);
+        
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
             subscribe("esp32/gps");
@@ -53,9 +52,8 @@ const Dashboard = () => {
       disconnect();
       toast.info("Tentative de reconnexion MQTT en cours...");
       
-      // Utiliser wss:// au lieu de mqtt:// pour la sécurité du navigateur
-      const secure = window.location.protocol === 'https:';
-      connect(secure ? "wss://test.mosquitto.org" : "ws://test.mosquitto.org", secure ? 8084 : 8083);
+      // Use localhost for Raspberry Pi
+      connect("mqtt://localhost", 1883);
       
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
@@ -94,7 +92,7 @@ const Dashboard = () => {
           {connected ? (
             <span className="text-green-400 text-sm flex items-center">
               <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-              MQTT Connecté (WSS)
+              MQTT Connecté (Localhost)
             </span>
           ) : (
             <span className="text-red-400 text-sm flex items-center">
@@ -123,7 +121,7 @@ const Dashboard = () => {
           {!connected && !lastPosition && (
             <div className="bg-amber-100 border border-amber-300 mb-6 p-3 rounded flex items-center text-sm">
               <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />
-              <span>Aucune donnée GPS disponible. Tentative de connexion à test.mosquitto.org en WebSocket sécurisé sur le topic esp32/gps...</span>
+              <span>Aucune donnée GPS disponible. Tentative de connexion au broker MQTT local sur le topic esp32/gps...</span>
             </div>
           )}
           

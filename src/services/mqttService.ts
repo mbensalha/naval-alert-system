@@ -36,52 +36,73 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     }
     
     try {
-      // Parse broker URL to determine protocol
-      // Default to WSS for browser security with HTTPS pages
-      let protocol: MqttProtocol = 'wss';
+      // For local Raspberry Pi setup, simplify connection settings and protocol handling
+      // Default to mqtt:// for local connections, ws:// for browser remote connections
+      let protocol: MqttProtocol = 'mqtt';  // Default for local connections
       let url = brokerUrl;
       
-      // Handle different protocols properly
+      // Check if running in browser environment vs Node.js environment
+      const isBrowser = typeof window !== 'undefined';
+      
+      // For browser environments over HTTPS, we need WSS
+      if (isBrowser) {
+        if (window.location.protocol === 'https:') {
+          protocol = 'wss';
+          console.log("Using WSS protocol for secure browser connection");
+        } else {
+          protocol = 'ws';
+          console.log("Using WS protocol for browser connection");
+        }
+      }
+      
+      // Handle protocol in URL if provided
       if (brokerUrl.startsWith('mqtt://')) {
-        // For HTTPS pages, force WSS instead of MQTT
-        protocol = 'wss';
+        protocol = isBrowser ? 'ws' : 'mqtt'; // Convert to WS for browser
         url = brokerUrl.replace('mqtt://', '');
-        console.log("Converted mqtt:// to wss:// for browser security");
+        if (isBrowser) console.log("Converted mqtt:// to ws:// for browser compatibility");
+      } else if (brokerUrl.startsWith('mqtts://')) {
+        protocol = isBrowser ? 'wss' : 'mqtts'; // Convert to WSS for browser
+        url = brokerUrl.replace('mqtts://', '');
+        if (isBrowser) console.log("Converted mqtts:// to wss:// for browser compatibility");
       } else if (brokerUrl.startsWith('ws://')) {
-        // For HTTPS pages, force WSS instead of WS
-        protocol = 'wss';
+        protocol = 'ws';
         url = brokerUrl.replace('ws://', '');
-        console.log("Converted ws:// to wss:// for browser security");
       } else if (brokerUrl.startsWith('wss://')) {
         protocol = 'wss';
         url = brokerUrl.replace('wss://', '');
-      } else if (brokerUrl.startsWith('mqtts://')) {
-        // For browser, still use WSS
-        protocol = 'wss';
-        url = brokerUrl.replace('mqtts://', '');
-        console.log("Converted mqtts:// to wss:// for browser compatibility");
-      } else {
-        // If no protocol is specified, default to wss
-        protocol = 'wss';
-        // Keep the URL as is if no protocol prefix
-        if (!brokerUrl.includes('://')) {
-          url = brokerUrl;
+      } else if (!brokerUrl.includes('://')) {
+        // No protocol specified, use appropriate default
+        if (isBrowser) {
+          // For browser, use WebSockets
+          protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+          console.log(`Using ${protocol} for browser connection to ${url}`);
+        } else {
+          // For Raspberry Pi local connection, use standard MQTT
+          protocol = 'mqtt';
+          console.log("Using standard MQTT for local connection");
         }
       }
       
       // Extract hostname and port from URL if provided
       let hostname = url;
       
-      // Determine the port based on the protocol
+      // Determine appropriate default port based on protocol and environment
       let mqttPort: number;
       
       if (port) {
         // If port is explicitly provided, use it
         mqttPort = port;
       } else {
-        // Since protocol is always 'wss' at this point due to our conversions,
-        // we can simplify this to just use the wss port
-        mqttPort = 8084; // Default WSS port
+        // Standard MQTT ports based on protocol
+        if (protocol === 'mqtt') {
+          mqttPort = 1883;
+        } else if (protocol === 'mqtts') {
+          mqttPort = 8883;
+        } else if (protocol === 'ws') {
+          mqttPort = 9001; // Standard WebSocket MQTT port
+        } else {
+          mqttPort = 9001; // Standard Secure WebSocket MQTT port
+        }
       }
                  
       // Handle port in the URL
@@ -98,10 +119,6 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       console.log(`MQTT connection details: protocol=${protocol}, hostname=${hostname}, port=${mqttPort}`);
       
-      // For browser environments, construct the WebSocket URL
-      const wsUrl = `${protocol}://${hostname}:${mqttPort}`;
-      console.log("Using WebSocket URL:", wsUrl);
-      
       // Set MQTT connection options
       const options: mqtt.IClientOptions = {
         protocol,
@@ -110,8 +127,6 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         keepalive: 60,
         connectTimeout: 10 * 1000, // 10 seconds
         reconnectPeriod: 5000, // 5 seconds
-        // For WebSockets security
-        rejectUnauthorized: false,
         clean: true, // Clean session
       };
       
@@ -124,8 +139,21 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       console.log("Creating MQTT client with options:", options);
       
-      // Connect to broker using WebSocket URL for browser environments
-      const client = mqtt.connect(wsUrl, options);
+      // Construct the connection URL
+      let connectionUrl: string;
+      
+      if (isBrowser) {
+        // For browser environments, use WebSocket URL format
+        connectionUrl = `${protocol}://${hostname}:${mqttPort}`;
+        console.log("Browser connection URL:", connectionUrl);
+      } else {
+        // For Node.js environments (like Raspberry Pi), use MQTT URL format
+        connectionUrl = `${protocol}://${hostname}:${mqttPort}`;
+        console.log("Node.js connection URL:", connectionUrl);
+      }
+      
+      // Connect to broker
+      const client = mqtt.connect(connectionUrl, options);
       
       client.on('connect', () => {
         console.log('Successfully connected to MQTT broker:', hostname);
