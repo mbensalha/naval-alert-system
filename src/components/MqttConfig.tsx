@@ -118,7 +118,7 @@ const MqttConfig = () => {
       <CardHeader className="pb-2 border-b border-white/10">
         <CardTitle className="text-base flex items-center">
           <WifiIcon className="mr-2 h-4 w-4 text-accent" />
-          Configuration MQTT
+          Configuration MQTT (Node-RED)
         </CardTitle>
       </CardHeader>
       <CardContent className="py-4 space-y-4">

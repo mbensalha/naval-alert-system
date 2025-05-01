@@ -129,12 +129,13 @@ export const useMqttStore = create<MqttState>((set, get) => ({
             console.log("Parsed MQTT position data:", data);
             
             // Format adapté au flux Node-RED fourni
+            // Le format Node-RED envoie latitude, longitude, speed et device_id
             if (data.latitude !== undefined && data.longitude !== undefined) {
               console.log("Setting new position from Node-RED format:", { lat: data.latitude, long: data.longitude });
               set({
                 lastPosition: { lat: data.latitude, long: data.longitude },
                 speed: data.speed !== undefined ? data.speed : get().speed,
-                deviceId: data.device_id || get().deviceId,
+                deviceId: data.device_id || get().deviceId || "ESP32",
                 lastUpdate: new Date()
               });
             }
@@ -145,6 +146,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
               set({
                 lastPosition: { lat: data.lat, long: longitude },
                 speed: data.speed !== undefined ? data.speed : get().speed,
+                deviceId: data.name || get().deviceId,
                 lastUpdate: new Date()
               });
             } else {

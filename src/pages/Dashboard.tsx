@@ -21,22 +21,45 @@ const Dashboard = () => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+    
+    // Automatically connect to MQTT broker when dashboard loads
+    if (!connected) {
+      console.log("Dashboard: Auto-connecting to MQTT broker...");
+      try {
+        connect("test.mosquitto.org", 1883);
+        setTimeout(() => {
+          if (useMqttStore.getState().connected) {
+            subscribe("esp32/gps");
+            toast.success("Connecté au broker MQTT", {
+              description: "Abonné au topic: esp32/gps"
+            });
+          }
+        }, 1500);
+      } catch (error) {
+        console.error("Error auto-connecting to MQTT:", error);
+      }
+    }
 
     return () => {
       clearInterval(timer);
     };
-  }, []);
+  }, [connected, connect, subscribe]);
 
   const handleReconnect = () => {
     try {
-      // Reconnect to MQTT broker with saved settings
+      // Reconnect to MQTT broker
       disconnect();
       toast.info("Tentative de reconnexion MQTT en cours...");
       
-      // This will now prompt the user to go to settings and connect manually
-      toast.info("Veuillez configurer la connexion MQTT dans les paramètres", {
-        description: "Accédez à la page Configuration pour vous connecter au broker MQTT"
-      });
+      connect("test.mosquitto.org", 1883);
+      setTimeout(() => {
+        if (useMqttStore.getState().connected) {
+          subscribe("esp32/gps");
+          toast.success("Reconnecté au broker MQTT");
+        } else {
+          toast.error("Échec de reconnexion au broker MQTT");
+        }
+      }, 1500);
     } catch (error) {
       console.error("Error reconnecting to MQTT:", error);
       toast.error("Erreur lors de la reconnexion MQTT");
@@ -95,7 +118,7 @@ const Dashboard = () => {
           {!connected && !lastPosition && (
             <div className="bg-amber-100 border border-amber-300 mb-6 p-3 rounded flex items-center text-sm">
               <AlertCircle className="mr-2 h-4 w-4 text-amber-500" />
-              <span>Aucune donnée GPS disponible. Veuillez configurer la connexion MQTT dans les paramètres.</span>
+              <span>Aucune donnée GPS disponible. Tentative de connexion à test.mosquitto.org sur le topic esp32/gps...</span>
             </div>
           )}
           
