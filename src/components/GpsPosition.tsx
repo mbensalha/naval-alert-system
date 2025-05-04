@@ -2,12 +2,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMqttStore } from "@/services/mqttService";
 import { useShipStore } from "@/store/shipStore";
-import { Compass, MapPinIcon, Gauge, Clock } from "lucide-react";
+import { Compass, MapPinIcon, Gauge, Clock, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatCoordinate, kmhToMph } from "@/utils/formatUtils";
 
 const GpsPosition = () => {
-  const { lastPosition, connected, deviceId, speed, lastUpdate } = useMqttStore();
+  const { lastPosition, connected, deviceId, speed, lastUpdate, dateTime } = useMqttStore();
   const { currentShip } = useShipStore();
   const [displayPosition, setDisplayPosition] = useState({ lat: 0, long: 0 });
   const [positionSource, setPositionSource] = useState<'mqtt' | 'ship' | 'none'>('none');
@@ -18,6 +18,7 @@ const GpsPosition = () => {
     console.log("GpsPosition component - MQTT deviceId:", deviceId);
     console.log("GpsPosition component - MQTT speed:", speed);
     console.log("GpsPosition component - MQTT lastUpdate:", lastUpdate);
+    console.log("GpsPosition component - MQTT dateTime:", dateTime);
     console.log("GpsPosition component - Current ship:", currentShip);
     
     if (lastPosition) {
@@ -33,7 +34,7 @@ const GpsPosition = () => {
     } else {
       setPositionSource('none');
     }
-  }, [lastPosition, currentShip, connected, deviceId, speed, lastUpdate]);
+  }, [lastPosition, currentShip, connected, deviceId, speed, lastUpdate, dateTime]);
   
   // Format the last update time if available
   const formattedLastUpdate = lastUpdate 
@@ -84,12 +85,28 @@ const GpsPosition = () => {
             <div className="flex items-center mt-4">
               <Gauge className="h-5 w-5 text-accent mr-2" />
               <span className="text-white">Vitesse:</span>
-              <span className="text-white/80 ml-2">{kmhToMph(speed).toFixed(1)} mph</span>
+              <span className="text-white/80 ml-2">{speed.toFixed(2)} km/h</span>
             </div>
           )}
           
+          {/* Affichage de la date et heure GPS si disponible */}
+          {dateTime && (
+            <>
+              <div className="flex items-center mt-2">
+                <Calendar className="h-4 w-4 text-accent mr-2" />
+                <span className="text-white">Date:</span>
+                <span className="text-white/80 ml-2">{dateTime.date}</span>
+              </div>
+              <div className="flex items-center mt-1">
+                <Clock className="h-4 w-4 text-accent mr-2" />
+                <span className="text-white">Heure:</span>
+                <span className="text-white/80 ml-2">{dateTime.time}</span>
+              </div>
+            </>
+          )}
+          
           {/* Affichage du dernier moment de mise à jour */}
-          {formattedLastUpdate && (
+          {formattedLastUpdate && !dateTime && (
             <div className="flex items-center mt-2 text-xs text-white/60">
               <Clock className="h-3 w-3 mr-1" />
               <span>Dernière mise à jour: {formattedLastUpdate}</span>

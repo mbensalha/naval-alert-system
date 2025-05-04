@@ -12,6 +12,7 @@ interface MqttState {
   speed: number | null;
   deviceId: string | null;
   lastUpdate: Date | null;
+  dateTime: { date: string; time: string } | null;
   connect: (brokerUrl: string, port?: number, username?: string, password?: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
@@ -25,6 +26,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   speed: null,
   deviceId: null,
   lastUpdate: null,
+  dateTime: null,
   
   connect: (brokerUrl: string, port?: number, username?: string, password?: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl, "port:", port || "default");
@@ -100,16 +102,21 @@ export const useMqttStore = create<MqttState>((set, get) => ({
             const data = JSON.parse(messageStr);
             console.log("Parsed MQTT GPS data:", data);
             
-            // Format from Node-RED flow:
-            // Expected format from the Node-RED flow:
-            // { lat: number, lng: number, speed: number, device_id: string }
+            // Handle the expected format from Raspberry Pi:
+            // { lat: number, lng: number, speed: number, date: string, time: string }
             if (data.lat !== undefined && data.lng !== undefined) {
-              console.log("Setting new position from Node-RED format:", { lat: data.lat, long: data.lng });
+              console.log("Setting new position from GPS data format:", { lat: data.lat, long: data.lng });
+              
+              // Create a combined date-time string and parse it into a Date object
+              const dateTimeStr = `${data.date || ''}T${data.time || ''}`;
+              const lastUpdate = dateTimeStr.includes('T') ? new Date(dateTimeStr) : new Date();
+              
               set({
                 lastPosition: { lat: data.lat, long: data.lng },
                 speed: data.speed !== undefined ? data.speed : get().speed,
                 deviceId: data.device_id || get().deviceId || "ESP32",
-                lastUpdate: new Date()
+                lastUpdate: lastUpdate,
+                dateTime: data.date && data.time ? { date: data.date, time: data.time } : null
               });
             }
             // Handle alternative format as fallback

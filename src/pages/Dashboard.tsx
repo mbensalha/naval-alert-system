@@ -33,10 +33,10 @@ const Dashboard = () => {
       console.log("Dashboard: Auto-connecting to MQTT broker...");
       try {
         // Use localhost for Raspberry Pi deployment
-        connect("mqtt://localhost", 1883);
+        connect("localhost", 1883);
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
-            // Subscribe to the updated topic from Node-RED flow
+            // Subscribe to the updated topic from ESP32
             subscribe("esp32/navire/gps");
             toast.success("Connecté au broker MQTT", {
               description: "Abonné au topic: esp32/navire/gps"
@@ -60,7 +60,7 @@ const Dashboard = () => {
       toast.info("Tentative de reconnexion MQTT en cours...");
 
       // Use localhost for Raspberry Pi
-      connect("mqtt://localhost", 1883);
+      connect("localhost", 1883);
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
           subscribe("esp32/navire/gps");
