@@ -1,3 +1,4 @@
+
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -36,90 +37,25 @@ export const useMqttStore = create<MqttState>((set, get) => ({
     }
     
     try {
-      // For local Raspberry Pi setup, simplify connection settings and protocol handling
-      // Default to mqtt:// for local connections, ws:// for browser remote connections
-      let protocol: MqttProtocol = 'mqtt';  // Default for local connections
-      let url = brokerUrl;
+      // For Raspberry Pi local setup, use MQTT directly (not WebSockets)
+      // Default to mqtt:// for local connections
+      const protocol: MqttProtocol = 'mqtt';
+      let hostname = brokerUrl;
       
-      // Check if running in browser environment vs Node.js environment
-      const isBrowser = typeof window !== 'undefined';
-      
-      // For browser environments over HTTPS, we need WSS
-      if (isBrowser) {
-        if (window.location.protocol === 'https:') {
-          protocol = 'wss';
-          console.log("Using WSS protocol for secure browser connection");
-        } else {
-          protocol = 'ws';
-          console.log("Using WS protocol for browser connection");
-        }
-      }
-      
-      // Handle protocol in URL if provided
-      if (brokerUrl.startsWith('mqtt://')) {
-        protocol = isBrowser ? 'ws' : 'mqtt'; // Convert to WS for browser
-        url = brokerUrl.replace('mqtt://', '');
-        if (isBrowser) console.log("Converted mqtt:// to ws:// for browser compatibility");
-      } else if (brokerUrl.startsWith('mqtts://')) {
-        protocol = isBrowser ? 'wss' : 'mqtts'; // Convert to WSS for browser
-        url = brokerUrl.replace('mqtts://', '');
-        if (isBrowser) console.log("Converted mqtts:// to wss:// for browser compatibility");
-      } else if (brokerUrl.startsWith('ws://')) {
-        protocol = 'ws';
-        url = brokerUrl.replace('ws://', '');
-      } else if (brokerUrl.startsWith('wss://')) {
-        protocol = 'wss';
-        url = brokerUrl.replace('wss://', '');
-      } else if (!brokerUrl.includes('://')) {
-        // No protocol specified, use appropriate default
-        if (isBrowser) {
-          // For browser, use WebSockets
-          protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-          console.log(`Using ${protocol} for browser connection to ${url}`);
-        } else {
-          // For Raspberry Pi local connection, use standard MQTT
-          protocol = 'mqtt';
-          console.log("Using standard MQTT for local connection");
-        }
-      }
-      
-      // Extract hostname and port from URL if provided
-      let hostname = url;
-      
-      // Determine appropriate default port based on protocol and environment
-      let mqttPort: number;
-      
-      if (port) {
-        // If port is explicitly provided, use it
-        mqttPort = port;
-      } else {
-        // Standard MQTT ports based on protocol
-        if (protocol === 'mqtt') {
-          mqttPort = 1883;
-        } else if (protocol === 'mqtts') {
-          mqttPort = 8883;
-        } else if (protocol === 'ws') {
-          mqttPort = 9001; // Standard WebSocket MQTT port
-        } else {
-          mqttPort = 9001; // Standard Secure WebSocket MQTT port
-        }
-      }
-                 
-      // Handle port in the URL
-      if (url.includes(':')) {
-        const parts = url.split(':');
-        hostname = parts[0];
-        if (!port) { // Only use port from URL if not explicitly provided
-          mqttPort = parseInt(parts[1], 10);
-        }
+      // Extract hostname if protocol is included
+      if (brokerUrl.includes('://')) {
+        hostname = brokerUrl.split('://')[1];
       }
       
       // Remove trailing slash from hostname if present
       hostname = hostname.replace(/\/$/, '');
       
+      // Use the specified port or default to 1883 for MQTT
+      const mqttPort = port || 1883;
+      
       console.log(`MQTT connection details: protocol=${protocol}, hostname=${hostname}, port=${mqttPort}`);
       
-      // Set MQTT connection options
+      // Set MQTT connection options for Raspberry Pi local broker
       const options: mqtt.IClientOptions = {
         protocol,
         hostname,
@@ -134,23 +70,13 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       if (username || password) {
         options.username = username;
         options.password = password;
-        console.log("Using authentication for MQTT connection");
       }
       
       console.log("Creating MQTT client with options:", options);
       
-      // Construct the connection URL
-      let connectionUrl: string;
-      
-      if (isBrowser) {
-        // For browser environments, use WebSocket URL format
-        connectionUrl = `${protocol}://${hostname}:${mqttPort}`;
-        console.log("Browser connection URL:", connectionUrl);
-      } else {
-        // For Node.js environments (like Raspberry Pi), use MQTT URL format
-        connectionUrl = `${protocol}://${hostname}:${mqttPort}`;
-        console.log("Node.js connection URL:", connectionUrl);
-      }
+      // Construct the connection URL for local MQTT
+      const connectionUrl = `${protocol}://${hostname}:${mqttPort}`;
+      console.log("Connection URL:", connectionUrl);
       
       // Connect to broker
       const client = mqtt.connect(connectionUrl, options);
@@ -170,22 +96,23 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         
         try {
           if (topic.includes('gps')) {
-            console.log("Processing position data from topic:", topic);
+            console.log("Processing GPS data from topic:", topic);
             const data = JSON.parse(messageStr);
-            console.log("Parsed MQTT position data:", data);
+            console.log("Parsed MQTT GPS data:", data);
             
-            // Format adapté au flux Node-RED fourni
-            // Le format Node-RED envoie latitude, longitude, speed et device_id
-            if (data.latitude !== undefined && data.longitude !== undefined) {
-              console.log("Setting new position from Node-RED format:", { lat: data.latitude, long: data.longitude });
+            // Format from Node-RED flow:
+            // Expected format from the Node-RED flow:
+            // { lat: number, lng: number, speed: number, device_id: string }
+            if (data.lat !== undefined && data.lng !== undefined) {
+              console.log("Setting new position from Node-RED format:", { lat: data.lat, long: data.lng });
               set({
-                lastPosition: { lat: data.latitude, long: data.longitude },
+                lastPosition: { lat: data.lat, long: data.lng },
                 speed: data.speed !== undefined ? data.speed : get().speed,
                 deviceId: data.device_id || get().deviceId || "ESP32",
                 lastUpdate: new Date()
               });
             }
-            // Gérer aussi le format alternatif au cas où
+            // Handle alternative format as fallback
             else if (data.lat !== undefined && (data.long !== undefined || data.lon !== undefined)) {
               const longitude = data.long !== undefined ? data.long : data.lon;
               console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });
@@ -196,7 +123,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
                 lastUpdate: new Date()
               });
             } else {
-              console.warn("MQTT message missing lat/long properties:", data);
+              console.warn("MQTT message missing lat/lng properties:", data);
             }
           }
         } catch (error) {

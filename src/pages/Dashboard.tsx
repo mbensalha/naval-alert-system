@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -8,6 +9,7 @@ import { useMqttStore } from '@/services/mqttService';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const {
@@ -17,6 +19,7 @@ const Dashboard = () => {
     subscribe,
     disconnect
   } = useMqttStore();
+
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -33,9 +36,10 @@ const Dashboard = () => {
         connect("mqtt://localhost", 1883);
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
-            subscribe("esp32/gps");
+            // Subscribe to the updated topic from Node-RED flow
+            subscribe("esp32/navire/gps");
             toast.success("Connecté au broker MQTT", {
-              description: "Abonné au topic: esp32/gps"
+              description: "Abonné au topic: esp32/navire/gps"
             });
           }
         }, 1500);
@@ -43,10 +47,12 @@ const Dashboard = () => {
         console.error("Error auto-connecting to MQTT:", error);
       }
     }
+
     return () => {
       clearInterval(timer);
     };
   }, [connected, connect, subscribe]);
+
   const handleReconnect = () => {
     try {
       // Reconnect to MQTT broker
@@ -57,7 +63,7 @@ const Dashboard = () => {
       connect("mqtt://localhost", 1883);
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
-          subscribe("esp32/gps");
+          subscribe("esp32/navire/gps");
           toast.success("Reconnecté au broker MQTT");
         } else {
           toast.error("Échec de reconnexion au broker MQTT");
@@ -80,6 +86,7 @@ const Dashboard = () => {
     minute: '2-digit',
     second: '2-digit'
   });
+
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
@@ -118,4 +125,5 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
+
 export default Dashboard;
