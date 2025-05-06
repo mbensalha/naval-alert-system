@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { useMqttStore } from '@/services/mqttService';
 import { useShipStore } from '@/store/shipStore';
@@ -90,7 +91,7 @@ const OpenSeaMap = () => {
       <CardHeader className="pb-2 border-b border-white/10">
         <CardTitle className="text-lg flex items-center">
           <Anchor className="mr-2 h-5 w-5 text-accent" />
-          CARTE MARITIME (Node-RED)
+          CARTE MARITIME
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 p-0 relative min-h-[400px]">
@@ -108,7 +109,7 @@ const OpenSeaMap = () => {
         
         {!lastPosition && (
           <div className="absolute inset-0 flex items-center justify-center bg-navy-light/50 z-10">
-            <span className="text-white/50">En attente de position GPS depuis Node-RED...</span>
+            <span className="text-white/50">En attente de position GPS...</span>
           </div>
         )}
       </CardContent>
