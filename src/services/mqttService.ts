@@ -1,4 +1,3 @@
-
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -102,24 +101,19 @@ export const useMqttStore = create<MqttState>((set, get) => ({
             const data = JSON.parse(messageStr);
             console.log("Parsed MQTT GPS data:", data);
             
-            // Handle the expected format from Raspberry Pi:
-            // { lat: number, lng: number, speed: number, date: string, time: string }
+            // Adapter le format de message venant de l'ESP32
+            // Format attendu: { lat: number, lng: number, speed: number }
             if (data.lat !== undefined && data.lng !== undefined) {
-              console.log("Setting new position from GPS data format:", { lat: data.lat, long: data.lng });
-              
-              // Create a combined date-time string and parse it into a Date object
-              const dateTimeStr = `${data.date || ''}T${data.time || ''}`;
-              const lastUpdate = dateTimeStr.includes('T') ? new Date(dateTimeStr) : new Date();
+              console.log("Setting new position from ESP32 data format:", { lat: data.lat, long: data.lng });
               
               set({
                 lastPosition: { lat: data.lat, long: data.lng },
                 speed: data.speed !== undefined ? data.speed : get().speed,
-                deviceId: data.device_id || get().deviceId || "ESP32",
-                lastUpdate: lastUpdate,
-                dateTime: data.date && data.time ? { date: data.date, time: data.time } : null
+                deviceId: data.device_id || get().deviceId || "ESP32-NetBox",
+                lastUpdate: new Date()
               });
             }
-            // Handle alternative format as fallback
+            // Format alternatif (si nécessaire)
             else if (data.lat !== undefined && (data.long !== undefined || data.lon !== undefined)) {
               const longitude = data.long !== undefined ? data.long : data.lon;
               console.log("Setting new position from alternative format:", { lat: data.lat, long: longitude });

@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useMqttStore } from '@/services/mqttService';
 import { useShipStore } from '@/store/shipStore';
@@ -122,7 +121,7 @@ const OpenSeaMap = () => {
           {speed !== null && (
             <div className="flex items-center mt-1">
               <Gauge className="h-4 w-4 text-accent mr-2" />
-              <span>Vitesse: {kmhToMph(speed).toFixed(1)} mph</span>
+              <span>Vitesse: {speed.toFixed(1)} mph</span>
             </div>
           )}
           <div className="flex items-center mt-1">

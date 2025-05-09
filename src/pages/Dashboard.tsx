@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -8,6 +9,7 @@ import { useMqttStore } from '@/services/mqttService';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const {
@@ -17,6 +19,7 @@ const Dashboard = () => {
     subscribe,
     disconnect
   } = useMqttStore();
+
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -29,8 +32,8 @@ const Dashboard = () => {
     if (!connected) {
       console.log("Dashboard: Auto-connecting to MQTT broker...");
       try {
-        // Use localhost for Raspberry Pi deployment
-        connect("localhost", 1883);
+        // Utilisation de l'adresse IP du Raspberry Pi (192.168.8.102)
+        connect("192.168.8.102", 1883);
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
             // Subscribe to the updated topic from ESP32
@@ -44,18 +47,20 @@ const Dashboard = () => {
         console.error("Error auto-connecting to MQTT:", error);
       }
     }
+
     return () => {
       clearInterval(timer);
     };
   }, [connected, connect, subscribe]);
+
   const handleReconnect = () => {
     try {
       // Reconnect to MQTT broker
       disconnect();
       toast.info("Tentative de reconnexion MQTT en cours...");
 
-      // Use localhost for Raspberry Pi
-      connect("localhost", 1883);
+      // Use the ESP32 config IP address (192.168.8.102)
+      connect("192.168.8.102", 1883);
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
           subscribe("esp32/navire/gps");
@@ -81,10 +86,9 @@ const Dashboard = () => {
     minute: '2-digit',
     second: '2-digit'
   });
+
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
-      
-      
       
       <div className="flex flex-1">
         <Sidebar />
@@ -92,7 +96,21 @@ const Dashboard = () => {
         <main className="flex-1 flex flex-col p-6 overflow-hidden">
           <h1 className="text-4xl font-bold mb-8 text-shadow text-slate-900">HOME</h1>
           
-          {!connected && !lastPosition}
+          {!connected && !lastPosition && (
+            <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-md flex items-center text-yellow-800">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              <span>Pas de connexion au broker MQTT ({formattedTime})</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-auto" 
+                onClick={handleReconnect}
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Reconnecter
+              </Button>
+            </div>
+          )}
           
           <div className="grid grid-cols-[2fr_1fr] gap-6 flex-1">
             <DetectionPanel />
@@ -104,4 +122,5 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
+
 export default Dashboard;
