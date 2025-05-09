@@ -1,3 +1,4 @@
+
 import mqtt from 'mqtt';
 import { create } from 'zustand';
 
@@ -12,6 +13,7 @@ interface MqttState {
   deviceId: string | null;
   lastUpdate: Date | null;
   dateTime: { date: string; time: string } | null;
+  connectionError: string | null;
   connect: (brokerUrl: string, port?: number, username?: string, password?: string) => void;
   disconnect: () => void;
   subscribe: (topic: string) => void;
@@ -26,6 +28,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
   deviceId: null,
   lastUpdate: null,
   dateTime: null,
+  connectionError: null,
   
   connect: (brokerUrl: string, port?: number, username?: string, password?: string) => {
     console.log("Connecting to MQTT broker:", brokerUrl, "port:", port || "default");
@@ -62,8 +65,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
         hostname,
         port: mqttPort,
         keepalive: 60,
-        connectTimeout: 10 * 1000, // 10 seconds
-        reconnectPeriod: 5000, // 5 seconds
+        connectTimeout: 5000, // 5 seconds
+        reconnectPeriod: 3000, // 3 seconds - reduced for faster reconnect attempts
         clean: true, // Clean session
       };
       
@@ -81,10 +84,11 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       // Connect to broker
       const client = mqtt.connect(connectionUrl, options);
+      set({ client, connectionError: null });
       
       client.on('connect', () => {
         console.log('Successfully connected to MQTT broker:', hostname);
-        set({ client, connected: true });
+        set({ client, connected: true, connectionError: null });
       });
       
       client.on('reconnect', () => {
@@ -101,8 +105,8 @@ export const useMqttStore = create<MqttState>((set, get) => ({
             const data = JSON.parse(messageStr);
             console.log("Parsed MQTT GPS data:", data);
             
-            // Adapter le format de message venant de l'ESP32
-            // Format attendu: { lat: number, lng: number, speed: number }
+            // Format pour ESP32 avec TinyGPS
+            // {"lat":43.296501,"lng":5.369789,"speed":0.00}
             if (data.lat !== undefined && data.lng !== undefined) {
               console.log("Setting new position from ESP32 data format:", { lat: data.lat, long: data.lng });
               
@@ -134,6 +138,7 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
       client.on('error', (err) => {
         console.error('MQTT connection error:', err);
+        set({ connectionError: err.message });
       });
       
       client.on('close', () => {
@@ -148,7 +153,11 @@ export const useMqttStore = create<MqttState>((set, get) => ({
       
     } catch (error) {
       console.error('Error creating MQTT client:', error);
-      set({ client: null, connected: false });
+      set({ 
+        client: null, 
+        connected: false,
+        connectionError: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   },
   
