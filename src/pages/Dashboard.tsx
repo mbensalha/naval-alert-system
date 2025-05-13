@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -9,18 +8,9 @@ import { useMqttStore } from '@/services/mqttService';
 import { AlertCircle, RefreshCw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [brokerAddress, setBrokerAddress] = useState("192.168.8.102");
@@ -33,7 +23,6 @@ const Dashboard = () => {
     subscribe,
     disconnect
   } = useMqttStore();
-
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -65,18 +54,15 @@ const Dashboard = () => {
         console.error("Error auto-connecting to MQTT:", error);
       }
     }
-
     return () => {
       clearInterval(timer);
     };
   }, [connected, connect, subscribe, brokerAddress, brokerPort, topic]);
-
   const handleReconnect = () => {
     try {
       // Reconnect to MQTT broker
       disconnect();
       toast.info("Tentative de reconnexion MQTT en cours...");
-
       connect(brokerAddress, brokerPort);
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
@@ -91,13 +77,12 @@ const Dashboard = () => {
       toast.error("Erreur lors de la reconnexion MQTT");
     }
   };
-
   const handleConfigSave = () => {
     // First disconnect from current broker
     if (connected) {
       disconnect();
     }
-    
+
     // Then reconnect with new settings
     try {
       connect(brokerAddress, brokerPort);
@@ -127,7 +112,6 @@ const Dashboard = () => {
     minute: '2-digit',
     second: '2-digit'
   });
-
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
@@ -157,35 +141,19 @@ const Dashboard = () => {
                     <Label htmlFor="broker" className="text-right">
                       Adresse IP
                     </Label>
-                    <Input
-                      id="broker"
-                      value={brokerAddress}
-                      onChange={(e) => setBrokerAddress(e.target.value)}
-                      className="col-span-3"
-                    />
+                    <Input id="broker" value={brokerAddress} onChange={e => setBrokerAddress(e.target.value)} className="col-span-3" />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="port" className="text-right">
                       Port
                     </Label>
-                    <Input
-                      id="port"
-                      type="number"
-                      value={brokerPort}
-                      onChange={(e) => setBrokerPort(parseInt(e.target.value))}
-                      className="col-span-3"
-                    />
+                    <Input id="port" type="number" value={brokerPort} onChange={e => setBrokerPort(parseInt(e.target.value))} className="col-span-3" />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="topic" className="text-right">
                       Topic
                     </Label>
-                    <Input
-                      id="topic"
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      className="col-span-3"
-                    />
+                    <Input id="topic" value={topic} onChange={e => setTopic(e.target.value)} className="col-span-3" />
                   </div>
                 </div>
                 <DialogFooter>
@@ -195,21 +163,7 @@ const Dashboard = () => {
             </Dialog>
           </div>
           
-          {!connected && (
-            <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded-md flex items-center text-yellow-800">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              <span>Pas de connexion au broker MQTT ({formattedTime})</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="ml-auto" 
-                onClick={handleReconnect}
-              >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                Reconnecter
-              </Button>
-            </div>
-          )}
+          {!connected}
           
           <div className="grid grid-cols-[2fr_1fr] gap-6 flex-1">
             <DetectionPanel />
@@ -221,5 +175,4 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
-
 export default Dashboard;
