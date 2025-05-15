@@ -41,8 +41,8 @@ const DetectionPanel = () => {
     try {
       if (videoRef.current) {
         // Create a video URL that points to the GStreamer UDP stream
-        // Note: This requires a browser that can handle the UDP stream or a proxy
-        const udpStreamUrl = `http://192.168.8.102:8080/stream`;
+        // Updated to use port 5000 and the new IP address 192.168.8.105
+        const udpStreamUrl = `http://192.168.8.105:8080/stream`;
         
         videoRef.current.src = udpStreamUrl;
         videoRef.current.onerror = () => {
@@ -161,7 +161,7 @@ const DetectionPanel = () => {
                     onClick={startUDPStream}
                   >
                     <Video className="mr-2 h-4 w-4" />
-                    Flux Jetson
+                    Flux Jetson (UDP)
                   </Button>
                   <Button
                     className="mt-2 bg-navy-light border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
@@ -177,7 +177,7 @@ const DetectionPanel = () => {
           
           {cameraActive && (
             <div className="absolute bottom-2 left-2 bg-green-500 px-2 py-1 rounded-full text-xs font-semibold animate-pulse">
-              {streamSource === 'udp' ? 'Flux Jetson actif' : 'Webcam active'}
+              {streamSource === 'udp' ? 'Flux Jetson actif (UDP 5000)' : 'Webcam active'}
             </div>
           )}
         </CardContent>

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -15,7 +14,7 @@ import { Label } from "@/components/ui/label";
 
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [brokerAddress, setBrokerAddress] = useState("192.168.8.102");
+  const [brokerAddress, setBrokerAddress] = useState("192.168.8.105");
   const [brokerPort, setBrokerPort] = useState(1883);
   const [topic, setTopic] = useState("esp32/navire/gps");
   const {
@@ -38,7 +37,7 @@ const Dashboard = () => {
     if (!connected) {
       console.log("Dashboard: Auto-connecting to MQTT broker...");
       try {
-        // Utilisation de l'adresse IP du Raspberry Pi
+        // Using the updated Jetson IP address
         connect(brokerAddress, { port: brokerPort });
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
