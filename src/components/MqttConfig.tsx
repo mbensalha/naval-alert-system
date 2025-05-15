@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,14 +10,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const MqttConfig = () => {
-  const [brokerUrl, setBrokerUrl] = useState("test.mosquitto.org");
-  const [brokerPort, setBrokerPort] = useState("8084"); // Port WSS par défaut
-  const [topic, setTopic] = useState("esp32/gps");
+  const [brokerUrl, setBrokerUrl] = useState("192.168.8.102");
+  const [brokerPort, setBrokerPort] = useState("1883"); // Default MQTT port
+  const [topic, setTopic] = useState("esp32/navire/gps");
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
-  const [protocol, setProtocol] = useState("wss"); // WebSocket Secure par défaut
+  const [protocol, setProtocol] = useState("mqtt"); // Default to MQTT
   
   const { connect, subscribe, disconnect, connected, lastPosition, lastUpdate } = useMqttStore();
   
@@ -66,17 +67,24 @@ const MqttConfig = () => {
       // Parser le numéro de port
       const portNumber = brokerPort ? parseInt(brokerPort, 10) : undefined;
       
-      // Construire l'URL avec le protocole
-      const fullBrokerUrl = `${protocol}://${brokerUrl}`;
-      console.log("Full broker URL:", fullBrokerUrl);
+      // Construire les options de connexion
+      const options: {
+        port?: number;
+        username?: string;
+        password?: string;
+        protocol?: 'mqtt' | 'mqtts' | 'ws' | 'wss';
+      } = {
+        port: portNumber,
+        protocol: protocol as 'mqtt' | 'mqtts' | 'ws' | 'wss'
+      };
+      
+      if (useAuth) {
+        options.username = username;
+        options.password = password;
+      }
       
       // Se connecter au broker avec la nouvelle URL
-      connect(
-        fullBrokerUrl, 
-        portNumber,
-        useAuth ? username : undefined,
-        useAuth ? password : undefined
-      );
+      connect(brokerUrl, options);
       
       if (topic) {
         console.log("Will subscribe to topic after connection:", topic);
@@ -85,10 +93,12 @@ const MqttConfig = () => {
           setIsConnecting(false);
           if (useMqttStore.getState().connected) {
             subscribe(topic);
-            console.log("Subscribed to topic:", topic);
+            // Also subscribe to the image topic from Jetson
+            subscribe("station/navire/image");
+            console.log("Subscribed to topics:", topic, "station/navire/image");
             
             toast.success("Connecté au broker MQTT", {
-              description: `Abonné au topic: ${topic}`,
+              description: `Abonné aux topics: ${topic}, station/navire/image`,
             });
             
             // Vérifier la connexion après un moment

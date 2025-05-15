@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -11,6 +12,7 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [brokerAddress, setBrokerAddress] = useState("192.168.8.102");
@@ -23,6 +25,7 @@ const Dashboard = () => {
     subscribe,
     disconnect
   } = useMqttStore();
+
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -36,13 +39,15 @@ const Dashboard = () => {
       console.log("Dashboard: Auto-connecting to MQTT broker...");
       try {
         // Utilisation de l'adresse IP du Raspberry Pi
-        connect(brokerAddress, brokerPort);
+        connect(brokerAddress, { port: brokerPort });
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
             // Subscribe to the topic from ESP32
             subscribe(topic);
+            // Also subscribe to the image topic from Jetson
+            subscribe("station/navire/image");
             toast.success("Connecté au broker MQTT", {
-              description: `Abonné au topic: ${topic}`
+              description: `Abonné aux topics: ${topic}, station/navire/image`
             });
           } else {
             toast.error("Échec de connexion au broker MQTT", {
@@ -58,15 +63,17 @@ const Dashboard = () => {
       clearInterval(timer);
     };
   }, [connected, connect, subscribe, brokerAddress, brokerPort, topic]);
+
   const handleReconnect = () => {
     try {
       // Reconnect to MQTT broker
       disconnect();
       toast.info("Tentative de reconnexion MQTT en cours...");
-      connect(brokerAddress, brokerPort);
+      connect(brokerAddress, { port: brokerPort });
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
           subscribe(topic);
+          subscribe("station/navire/image");
           toast.success("Reconnecté au broker MQTT");
         } else {
           toast.error("Échec de reconnexion au broker MQTT");
@@ -77,6 +84,7 @@ const Dashboard = () => {
       toast.error("Erreur lors de la reconnexion MQTT");
     }
   };
+
   const handleConfigSave = () => {
     // First disconnect from current broker
     if (connected) {
@@ -85,12 +93,13 @@ const Dashboard = () => {
 
     // Then reconnect with new settings
     try {
-      connect(brokerAddress, brokerPort);
+      connect(brokerAddress, { port: brokerPort });
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
           subscribe(topic);
+          subscribe("station/navire/image");
           toast.success("Configuration MQTT mise à jour", {
-            description: `Connecté à ${brokerAddress}:${brokerPort} - Topic: ${topic}`
+            description: `Connecté à ${brokerAddress}:${brokerPort} - Topics: ${topic}, station/navire/image`
           });
         } else {
           toast.error("Échec de connexion avec la nouvelle configuration");
@@ -112,6 +121,7 @@ const Dashboard = () => {
     minute: '2-digit',
     second: '2-digit'
   });
+
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
@@ -163,7 +173,19 @@ const Dashboard = () => {
             </Dialog>
           </div>
           
-          {!connected}
+          {!connected && (
+            <div className="bg-yellow-100 text-amber-800 p-4 rounded-md mb-6 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              <div>
+                <p className="font-medium">Non connecté au broker MQTT</p>
+                <p className="text-sm">Vérifiez que le broker est bien lancé sur {brokerAddress}:{brokerPort}</p>
+              </div>
+              <Button variant="outline" className="ml-auto" onClick={handleReconnect}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Reconnecter
+              </Button>
+            </div>
+          )}
           
           <div className="grid grid-cols-[2fr_1fr] gap-6 flex-1">
             <DetectionPanel />
@@ -175,4 +197,5 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
+
 export default Dashboard;

@@ -4,8 +4,10 @@ import { useShipStore } from "@/store/shipStore";
 import { ShipClassification } from "@/types";
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, HelpCircle, Shield, AlertTriangle, Sailboat, Handshake } from "lucide-react";
+import { Check, HelpCircle, Shield, AlertTriangle, Sailboat, Handshake, Download } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const getClassificationIcon = (classification: ShipClassification) => {
   switch (classification) {
@@ -44,6 +46,7 @@ const getClassificationColor = (classification: ShipClassification) => {
 const HistoryList = () => {
   // Use a simple state to store ships
   const [ships, setShips] = useState([]);
+  const exportHistory = useShipStore(state => state.exportHistory);
   
   // Get ships from store once on component mount, not during render
   useEffect(() => {
@@ -61,6 +64,50 @@ const HistoryList = () => {
     return () => unsubscribe();
   }, []);
   
+  const handleExport = () => {
+    try {
+      const jsonStr = exportHistory();
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(jsonStr);
+      
+      // Create download link
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", `navires_detection_${new Date().toISOString().split('T')[0]}.json`);
+      
+      document.body.appendChild(downloadAnchorNode); // required for firefox
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+      
+      toast.success("Historique des détections exporté avec succès");
+    } catch (error) {
+      console.error("Error exporting history:", error);
+      toast.error("Erreur lors de l'exportation de l'historique");
+    }
+  };
+  
+  const handleImageDownload = (imageData: string, shipId: string) => {
+    if (!imageData) {
+      toast.error("Pas d'image disponible pour cette détection");
+      return;
+    }
+    
+    try {
+      // Create download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = imageData;
+      downloadLink.download = `detection_navire_${shipId.substring(0, 8)}.png`;
+      
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      
+      toast.success("Image téléchargée avec succès");
+    } catch (error) {
+      console.error("Error downloading image:", error);
+      toast.error("Erreur lors du téléchargement de l'image");
+    }
+  };
+  
   if (ships.length === 0) {
     return (
       <div className="flex items-center justify-center h-full text-navy">
@@ -71,6 +118,19 @@ const HistoryList = () => {
   
   return (
     <div className="space-y-4 animate-fade-in">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Détections enregistrées : {ships.length}</h3>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleExport} 
+          className="flex items-center gap-1"
+        >
+          <Download className="h-4 w-4" />
+          Exporter
+        </Button>
+      </div>
+      
       {ships.map((ship) => (
         <Card 
           key={ship.id} 
@@ -88,13 +148,25 @@ const HistoryList = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="py-3 px-4 flex gap-3">
-            <div className="w-24 h-24 bg-navy/20 rounded overflow-hidden flex items-center justify-center">
+            <div className="w-24 h-24 bg-navy/20 rounded overflow-hidden flex items-center justify-center relative group">
               {ship.screenshot ? (
-                <img 
-                  src={ship.screenshot} 
-                  alt="Capture navire" 
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <img 
+                    src={ship.screenshot} 
+                    alt="Capture navire" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="text-white p-1 h-auto" 
+                      onClick={() => handleImageDownload(ship.screenshot, ship.id)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <span className="text-xs text-navy/50">Pas d'image</span>
               )}
