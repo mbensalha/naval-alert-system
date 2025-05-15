@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -11,11 +12,14 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [brokerAddress, setBrokerAddress] = useState("192.168.8.105");
   const [brokerPort, setBrokerPort] = useState(1883);
-  const [topic, setTopic] = useState("esp32/navire/gps");
+  const [gpsTopic, setGpsTopic] = useState("esp32/navire/gps");
+  const [imageTopic, setImageTopic] = useState("station/navire/image");
+  
   const {
     connected,
     lastPosition,
@@ -23,6 +27,7 @@ const Dashboard = () => {
     subscribe,
     disconnect
   } = useMqttStore();
+
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -41,12 +46,11 @@ const Dashboard = () => {
         });
         setTimeout(() => {
           if (useMqttStore.getState().connected) {
-            // Subscribe to the topic from ESP32
-            subscribe(topic);
-            // Also subscribe to the image topic from Jetson
-            subscribe("station/navire/image");
+            // Subscribe to the topics
+            subscribe(gpsTopic);
+            subscribe(imageTopic);
             toast.success("Connecté au broker MQTT", {
-              description: `Abonné aux topics: ${topic}, station/navire/image`
+              description: `Abonné aux topics: ${gpsTopic}, ${imageTopic}`
             });
           } else {
             toast.error("Échec de connexion au broker MQTT", {
@@ -61,7 +65,8 @@ const Dashboard = () => {
     return () => {
       clearInterval(timer);
     };
-  }, [connected, connect, subscribe, brokerAddress, brokerPort, topic]);
+  }, [connected, connect, subscribe, brokerAddress, brokerPort, gpsTopic, imageTopic]);
+
   const handleReconnect = () => {
     try {
       // Reconnect to MQTT broker
@@ -72,8 +77,8 @@ const Dashboard = () => {
       });
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
-          subscribe(topic);
-          subscribe("station/navire/image");
+          subscribe(gpsTopic);
+          subscribe(imageTopic);
           toast.success("Reconnecté au broker MQTT");
         } else {
           toast.error("Échec de reconnexion au broker MQTT");
@@ -84,6 +89,7 @@ const Dashboard = () => {
       toast.error("Erreur lors de la reconnexion MQTT");
     }
   };
+
   const handleConfigSave = () => {
     // First disconnect from current broker
     if (connected) {
@@ -97,10 +103,10 @@ const Dashboard = () => {
       });
       setTimeout(() => {
         if (useMqttStore.getState().connected) {
-          subscribe(topic);
-          subscribe("station/navire/image");
+          subscribe(gpsTopic);
+          subscribe(imageTopic);
           toast.success("Configuration MQTT mise à jour", {
-            description: `Connecté à ${brokerAddress}:${brokerPort} - Topics: ${topic}, station/navire/image`
+            description: `Connecté à ${brokerAddress}:${brokerPort} - Topics: ${gpsTopic}, ${imageTopic}`
           });
         } else {
           toast.error("Échec de connexion avec la nouvelle configuration");
@@ -122,6 +128,7 @@ const Dashboard = () => {
     minute: '2-digit',
     second: '2-digit'
   });
+
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
@@ -159,11 +166,20 @@ const Dashboard = () => {
                     </Label>
                     <Input id="port" type="number" value={brokerPort} onChange={e => setBrokerPort(parseInt(e.target.value))} className="col-span-3" />
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="topic" className="text-right">
-                      Topic
-                    </Label>
-                    <Input id="topic" value={topic} onChange={e => setTopic(e.target.value)} className="col-span-3" />
+                  <div>
+                    <div className="mb-2 font-medium">Topics</div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="gpsTopic" className="text-right">
+                        GPS (ESP32)
+                      </Label>
+                      <Input id="gpsTopic" value={gpsTopic} onChange={e => setGpsTopic(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4 mt-2">
+                      <Label htmlFor="imageTopic" className="text-right">
+                        Image (Jetson)
+                      </Label>
+                      <Input id="imageTopic" value={imageTopic} onChange={e => setImageTopic(e.target.value)} className="col-span-3" />
+                    </div>
                   </div>
                 </div>
                 <DialogFooter>
@@ -185,4 +201,5 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
+
 export default Dashboard;

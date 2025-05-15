@@ -5,14 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { useMqttStore } from "@/services/mqttService";
 import { toast } from "sonner";
-import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw, ShieldIcon } from "lucide-react";
+import { WifiIcon, SignalIcon, ServerIcon, InfoIcon, RefreshCw, ShieldIcon, MapPinIcon, ImageIcon } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const MqttConfig = () => {
-  const [brokerUrl, setBrokerUrl] = useState("192.168.8.102");
+  const [brokerUrl, setBrokerUrl] = useState("192.168.8.105");
   const [brokerPort, setBrokerPort] = useState("1883"); // Default MQTT port
-  const [topic, setTopic] = useState("esp32/navire/gps");
+  const [gpsTopic, setGpsTopic] = useState("esp32/navire/gps");
+  const [imageTopic, setImageTopic] = useState("station/navire/image");
   const [useAuth, setUseAuth] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -86,44 +88,40 @@ const MqttConfig = () => {
       // Se connecter au broker avec la nouvelle URL
       connect(brokerUrl, options);
       
-      if (topic) {
-        console.log("Will subscribe to topic after connection:", topic);
-        // Attendre un moment avant de s'abonner pour s'assurer que la connexion est établie
-        setTimeout(() => {
-          setIsConnecting(false);
-          if (useMqttStore.getState().connected) {
-            subscribe(topic);
-            // Also subscribe to the image topic from Jetson
-            subscribe("station/navire/image");
-            console.log("Subscribed to topics:", topic, "station/navire/image");
-            
-            toast.success("Connecté au broker MQTT", {
-              description: `Abonné aux topics: ${topic}, station/navire/image`,
+      setTimeout(() => {
+        setIsConnecting(false);
+        if (useMqttStore.getState().connected) {
+          // S'abonner aux topics GPS et Image
+          subscribe(gpsTopic);
+          subscribe(imageTopic);
+          console.log("Subscribed to topics:", gpsTopic, imageTopic);
+          
+          toast.success("Connecté au broker MQTT", {
+            description: `Abonné aux topics: ${gpsTopic}, ${imageTopic}`,
+          });
+          
+          // Vérifier la connexion après un moment
+          setTimeout(() => {
+            const state = useMqttStore.getState();
+            console.log("Follow-up connection check:", {
+              connected: state.connected,
+              lastPosition: state.lastPosition,
+              lastUpdate: state.lastUpdate
             });
             
-            // Vérifier la connexion après un moment
-            setTimeout(() => {
-              const state = useMqttStore.getState();
-              console.log("Follow-up connection check:", {
-                connected: state.connected,
-                lastPosition: state.lastPosition,
-                lastUpdate: state.lastUpdate
+            if (!state.lastPosition && state.connected) {
+              toast.info("Connecté mais aucune donnée reçue", {
+                description: "Vérifiez que des données sont publiées sur les topics configurés"
               });
-              
-              if (!state.lastPosition && state.connected) {
-                toast.info("Connecté mais aucune donnée reçue", {
-                  description: "Vérifiez que des données sont publiées sur ce topic"
-                });
-              }
-            }, 5000);
-            
-          } else {
-            toast.error("Échec de connexion au broker MQTT", {
-              description: "La connexion n'a pas pu être établie",
-            });
-          }
-        }, 1500);
-      }
+            }
+          }, 5000);
+          
+        } else {
+          toast.error("Échec de connexion au broker MQTT", {
+            description: "La connexion n'a pas pu être établie",
+          });
+        }
+      }, 1500);
     } catch (error) {
       setIsConnecting(false);
       console.error("MQTT connection error:", error);
@@ -146,7 +144,7 @@ const MqttConfig = () => {
       <CardHeader className="pb-2 border-b border-white/10">
         <CardTitle className="text-base flex items-center">
           <WifiIcon className="mr-2 h-4 w-4 text-accent" />
-          Configuration MQTT (Node-RED)
+          Configuration MQTT (Broker)
         </CardTitle>
       </CardHeader>
       <CardContent className="py-4 space-y-4">
@@ -181,11 +179,11 @@ const MqttConfig = () => {
           <Input 
             value={brokerUrl}
             onChange={(e) => setBrokerUrl(e.target.value)}
-            placeholder="ex: test.mosquitto.org"
+            placeholder="ex: 192.168.8.105"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Entrez l'adresse du broker sans le protocole (ex: test.mosquitto.org)
+            Entrez l'adresse du broker sans le protocole (ex: 192.168.8.105)
           </p>
         </div>
         
@@ -194,26 +192,51 @@ const MqttConfig = () => {
           <Input 
             value={brokerPort}
             onChange={(e) => setBrokerPort(e.target.value)}
-            placeholder="8084"
+            placeholder="1883"
             className="bg-navy-light text-white border-accent"
           />
           <p className="text-xs text-white/60">
-            Port du broker (8084 pour WSS, 8083 pour WS, 1883 pour MQTT, 8883 pour MQTTS)
+            Port du broker (1883 pour MQTT, 8883 pour MQTTS, 8083 pour WS, 8084 pour WSS)
           </p>
         </div>
         
-        <div className="space-y-2">
-          <label className="text-sm text-white/80">Topic</label>
-          <Input 
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="esp32/gps"
-            className="bg-navy-light text-white border-accent"
-          />
-          <p className="text-xs text-white/60">
-            Format JSON attendu: {`{"latitude": 48.856614, "longitude": 2.3522219, "speed": 15, "device_id": "ESP32"}`}
-          </p>
+        <Separator className="bg-white/10 my-2" />
+        
+        <div className="space-y-4">
+          <h3 className="font-medium">Configuration des Topics</h3>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-white/80 flex items-center">
+              <MapPinIcon className="h-4 w-4 mr-2" /> Topic GPS (ESP32)
+            </label>
+            <Input 
+              value={gpsTopic}
+              onChange={(e) => setGpsTopic(e.target.value)}
+              placeholder="esp32/navire/gps"
+              className="bg-navy-light text-white border-accent"
+            />
+            <p className="text-xs text-white/60">
+              Format JSON attendu: {`{"lat": 48.856614, "lng": 2.3522219, "speed": 15, "device_id": "ESP32"}`}
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm text-white/80 flex items-center">
+              <ImageIcon className="h-4 w-4 mr-2" /> Topic Image (Jetson)
+            </label>
+            <Input 
+              value={imageTopic}
+              onChange={(e) => setImageTopic(e.target.value)}
+              placeholder="station/navire/image"
+              className="bg-navy-light text-white border-accent"
+            />
+            <p className="text-xs text-white/60">
+              Format attendu: Image binaire PNG/JPG
+            </p>
+          </div>
         </div>
+        
+        <Separator className="bg-white/10 my-2" />
         
         <div className="flex items-center space-x-2 pt-2">
           <Checkbox 

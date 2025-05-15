@@ -1,11 +1,14 @@
+
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import MqttConfig from '@/components/MqttConfig';
 import { Settings as SettingsIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
 const Settings = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  
   useEffect(() => {
     document.title = "Configuration - Système de Surveillance Navale";
 
@@ -27,10 +30,9 @@ const Settings = () => {
     minute: '2-digit',
     second: '2-digit'
   });
+  
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
-      
-      
       
       <div className="flex flex-1">
         <Sidebar />
@@ -42,7 +44,6 @@ const Settings = () => {
           </div>
           
           <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-6 max-w-4xl mx-auto">
-            
             <div className="grid grid-cols-1 gap-6">
               <MqttConfig />
             </div>
@@ -51,4 +52,5 @@ const Settings = () => {
       </div>
     </div>;
 };
+
 export default Settings;
