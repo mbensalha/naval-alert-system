@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useShipStore } from '@/store/shipStore';
 
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -20,10 +19,7 @@ const Dashboard = () => {
   const [brokerPort, setBrokerPort] = useState(1883);
   const [gpsTopic, setGpsTopic] = useState("esp32/navire/gps");
   const [imageTopic, setImageTopic] = useState("station/navire/image");
-  const [shipDetected, setShipDetected] = useState(false);
-  const [alertBlinking, setAlertBlinking] = useState(false);
   
-  const { detectShip } = useShipStore();
   const {
     connected,
     lastPosition,
@@ -70,39 +66,6 @@ const Dashboard = () => {
       clearInterval(timer);
     };
   }, [connected, connect, subscribe, brokerAddress, brokerPort, gpsTopic, imageTopic]);
-
-  // New effect for handling ship detection from video stream
-  useEffect(() => {
-    // This would be triggered by a real detection from the video stream
-    // For this implementation, we'll simulate a detection with a custom event
-    const handleShipDetection = () => {
-      console.log("Ship detection triggered from video stream");
-      setShipDetected(true);
-      
-      // Wait 5 seconds before showing the identification panel and blinking alert
-      setTimeout(() => {
-        setAlertBlinking(true);
-        detectShip(); // This will trigger the ShipAlert component to show
-        
-        toast.warning("Navire militaire détecté!", {
-          description: "Classification requise immédiatement"
-        });
-      }, 5000);
-    };
-    
-    // Add custom event listener for ship detection (this would be replaced by actual video detection logic)
-    window.addEventListener("ship-detected", handleShipDetection);
-    
-    // For testing: You can uncomment this to simulate a detection after 10 seconds
-    // const testTimer = setTimeout(() => {
-    //   handleShipDetection();
-    // }, 10000);
-    
-    return () => {
-      window.removeEventListener("ship-detected", handleShipDetection);
-      // clearTimeout(testTimer);
-    };
-  }, [detectShip]);
 
   const handleReconnect = () => {
     try {
@@ -154,12 +117,6 @@ const Dashboard = () => {
     }
   };
 
-  // Function to simulate ship detection (for testing/demo)
-  const simulateShipDetection = () => {
-    const event = new Event('ship-detected');
-    window.dispatchEvent(event);
-  };
-
   // Format date and time
   const formattedDate = currentTime.toLocaleDateString('fr-FR', {
     day: '2-digit',
@@ -182,81 +139,60 @@ const Dashboard = () => {
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-shadow text-slate-900">HOME</h1>
             
-            <div className="flex gap-2">
-              {alertBlinking && (
-                <AlertCircle 
-                  className="h-6 w-6 animate-pulse text-red-500 mr-2" 
-                  onClick={simulateShipDetection}
-                />
-              )}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    Configuration MQTT
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Configuration MQTT</DialogTitle>
-                    <DialogDescription>
-                      Paramétrez votre connexion au broker MQTT local
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Configuration MQTT
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Configuration MQTT</DialogTitle>
+                  <DialogDescription>
+                    Paramétrez votre connexion au broker MQTT local
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="broker" className="text-right">
+                      Adresse IP
+                    </Label>
+                    <Input id="broker" value={brokerAddress} onChange={e => setBrokerAddress(e.target.value)} className="col-span-3" />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="port" className="text-right">
+                      Port
+                    </Label>
+                    <Input id="port" type="number" value={brokerPort} onChange={e => setBrokerPort(parseInt(e.target.value))} className="col-span-3" />
+                  </div>
+                  <div>
+                    <div className="mb-2 font-medium">Topics</div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="broker" className="text-right">
-                        Adresse IP
+                      <Label htmlFor="gpsTopic" className="text-right">
+                        GPS (ESP32)
                       </Label>
-                      <Input id="broker" value={brokerAddress} onChange={e => setBrokerAddress(e.target.value)} className="col-span-3" />
+                      <Input id="gpsTopic" value={gpsTopic} onChange={e => setGpsTopic(e.target.value)} className="col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="port" className="text-right">
-                        Port
+                    <div className="grid grid-cols-4 items-center gap-4 mt-2">
+                      <Label htmlFor="imageTopic" className="text-right">
+                        Image (Jetson)
                       </Label>
-                      <Input id="port" type="number" value={brokerPort} onChange={e => setBrokerPort(parseInt(e.target.value))} className="col-span-3" />
-                    </div>
-                    <div>
-                      <div className="mb-2 font-medium">Topics</div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="gpsTopic" className="text-right">
-                          GPS (ESP32)
-                        </Label>
-                        <Input id="gpsTopic" value={gpsTopic} onChange={e => setGpsTopic(e.target.value)} className="col-span-3" />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4 mt-2">
-                        <Label htmlFor="imageTopic" className="text-right">
-                          Image (Jetson)
-                        </Label>
-                        <Input id="imageTopic" value={imageTopic} onChange={e => setImageTopic(e.target.value)} className="col-span-3" />
-                      </div>
+                      <Input id="imageTopic" value={imageTopic} onChange={e => setImageTopic(e.target.value)} className="col-span-3" />
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button type="submit" onClick={handleConfigSave}>Appliquer</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={handleConfigSave}>Appliquer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
           
-          {!connected && (
-            <div className="mb-4">
-              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded flex items-center justify-between">
-                <div className="flex items-center">
-                  <AlertCircle className="h-5 w-5 mr-2" />
-                  <span>Non connecté au broker MQTT</span>
-                </div>
-                <Button onClick={handleReconnect} size="sm" variant="outline" className="flex items-center gap-2">
-                  <RefreshCw className="h-4 w-4" />
-                  Reconnecter
-                </Button>
-              </div>
-            </div>
-          )}
+          {!connected}
           
           <div className="grid grid-cols-[2fr_1fr] gap-6 flex-1">
-            <DetectionPanel onShipDetect={simulateShipDetection} />
+            <DetectionPanel />
             <CommandPanel />
           </div>
         </main>

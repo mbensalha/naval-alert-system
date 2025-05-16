@@ -32,6 +32,12 @@ const ShipAlert = () => {
       
       // Speak alert message
       speakMessage("Alerte! Navire militaire détecté! Veuillez le classifier immédiatement.");
+      
+      // Show toast notification
+      toast.warning("Un navire militaire détecté ! Classifier le", {
+        description: "Veuillez classifier le navire détecté",
+        duration: 5000,
+      });
     } else {
       setIsVisible(false);
       setIsFlashing(false);
