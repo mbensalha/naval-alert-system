@@ -25,6 +25,7 @@ interface ShipState {
   takeScreenshot: (imageData: string) => void;
   setMqttImage: (imageData: string) => void;
   exportHistory: () => string;
+  setAlertActive: (active: boolean) => void;
 }
 
 export const useShipStore = create<ShipState>()(
@@ -120,6 +121,10 @@ export const useShipStore = create<ShipState>()(
         // Export all ship history as JSON
         const ships = get().getHistory();
         return JSON.stringify(ships, null, 2);
+      },
+      
+      setAlertActive: (active) => {
+        set({ alertActive: active });
       }
     }),
     {

@@ -3,16 +3,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useShipStore } from "@/store/shipStore";
-import { Video, VideoOff } from "lucide-react";
+import { Video, VideoOff, AlertTriangle } from "lucide-react";
 import OpenSeaMap from "./OpenSeaMap";
 import { toast } from "sonner";
 
 const DetectionPanel = () => {
   const detectShip = useShipStore((state) => state.detectShip);
   const takeScreenshot = useShipStore((state) => state.takeScreenshot);
+  const setAlertActive = useShipStore((state) => state.setAlertActive);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [streamActive, setStreamActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isAlertBlinking, setIsAlertBlinking] = useState(false);
 
   // Function to start the UDP stream from Jetson
   const startUDPStream = () => {
@@ -32,6 +34,12 @@ const DetectionPanel = () => {
           setStreamActive(true);
           setErrorMessage(null);
           toast.success("Flux vidéo Jetson connecté");
+          
+          // Start blinking alert icon when video stream starts
+          setIsAlertBlinking(true);
+          
+          // Show classification panel after stream starts
+          setAlertActive(true);
         };
         
         videoRef.current.load();
@@ -53,6 +61,8 @@ const DetectionPanel = () => {
       videoRef.current.pause();
       videoRef.current.src = '';
       setStreamActive(false);
+      setIsAlertBlinking(false);
+      setAlertActive(false);  // Reset alert when stream stops
     }
   };
 
@@ -73,6 +83,9 @@ const DetectionPanel = () => {
     
     // Call the detect ship function
     detectShip();
+    
+    // Start blinking alert
+    setIsAlertBlinking(true);
   };
 
   // Start stream automatically when component mounts
@@ -95,6 +108,9 @@ const DetectionPanel = () => {
           <CardTitle className="text-lg flex items-center">
             <Video className="mr-2 h-5 w-5 text-accent" />
             FLUX VIDEO JETSON
+            {isAlertBlinking && streamActive && (
+              <AlertTriangle className="ml-2 h-5 w-5 text-red-500 animate-pulse-red" />
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 p-0 relative">

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ShipClassification } from '@/types';
 import { useShipStore } from '@/store/shipStore';
-import { Bell } from 'lucide-react';
+import { Bell, AlertTriangle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { playDetectionAlert, speakMessage } from '@/services/audioService';
@@ -11,7 +11,7 @@ import { playDetectionAlert, speakMessage } from '@/services/audioService';
 const ShipAlert = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
-  const { currentShip, classifyShip } = useShipStore();
+  const { currentShip, classifyShip, alertActive } = useShipStore();
   
   const classifications: ShipClassification[] = [
     "HOSTILE",
@@ -23,7 +23,7 @@ const ShipAlert = () => {
   ];
   
   useEffect(() => {
-    if (currentShip && !currentShip.classification) {
+    if (currentShip && !currentShip.classification || alertActive) {
       setIsVisible(true);
       setIsFlashing(true);
       
@@ -42,7 +42,7 @@ const ShipAlert = () => {
       setIsVisible(false);
       setIsFlashing(false);
     }
-  }, [currentShip]);
+  }, [currentShip, alertActive]);
   
   const handleClassify = (classification: ShipClassification) => {
     if (currentShip) {
@@ -64,7 +64,7 @@ const ShipAlert = () => {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 animate-fade-in">
       <Alert className="bg-navy border border-accent shadow-lg max-w-md">
-        <Bell className={`h-5 w-5 ${isFlashing ? 'text-red-500 animate-pulse' : 'text-accent'}`} />
+        <AlertTriangle className={`h-5 w-5 ${isFlashing ? 'text-red-500 animate-pulse-red' : 'text-accent'}`} />
         <AlertTitle className="text-white font-bold text-lg">
           Alerte: Navire Militaire Détecté!
         </AlertTitle>
@@ -80,9 +80,7 @@ const ShipAlert = () => {
               className={`border-accent ${
                 classification === "HOSTILE" ? "border-red-500 text-red-400 hover:bg-red-900/20" : 
                 classification === "AMI" ? "border-green-500 text-green-400 hover:bg-green-900/20" : 
-                classification === "SUSPECT" || classification === "INCONNU" || 
-                classification === "PRESUME AMI" || classification === "NEUTRE" ? 
-                "text-black hover:bg-accent/20" : "text-white hover:bg-accent/20"
+                "border-accent text-white hover:bg-accent/20"
               }`}
               onClick={() => handleClassify(classification)}
             >
