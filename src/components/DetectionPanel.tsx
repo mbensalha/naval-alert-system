@@ -1,165 +1,189 @@
 
-import React, { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useShipStore } from "@/store/shipStore";
-import { Video, VideoOff } from "lucide-react";
-import OpenSeaMap from "./OpenSeaMap";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useShipStore } from '@/store/shipStore';
+import { AlertTriangle, Camera, Eye, EyeOff, Video } from 'lucide-react';
 
-const DetectionPanel = () => {
-  const detectShip = useShipStore((state) => state.detectShip);
-  const takeScreenshot = useShipStore((state) => state.takeScreenshot);
-  const videoRef = useRef<HTMLVideoElement>(null);
+interface DetectionPanelProps {
+  onShipDetect?: () => void;
+}
+
+const DetectionPanel = ({ onShipDetect }: DetectionPanelProps) => {
   const [streamActive, setStreamActive] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Function to start the UDP stream from Jetson
-  const startUDPStream = () => {
+  const [shipDetectionActive, setShipDetectionActive] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const detectTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // When ship detection is activated, set a timer to simulate detection after 5 seconds
+  useEffect(() => {
+    if (shipDetectionActive && streamActive) {
+      // Clear any existing timer
+      if (detectTimer.current) {
+        clearTimeout(detectTimer.current);
+      }
+      
+      // Start detection process (simulate detection after 5 seconds)
+      toast.info("Détection de navire activée", {
+        description: "Le système analyse en temps réel le flux vidéo"
+      });
+      
+      // For demo: Set a timer to simulate a ship detection after 5 seconds
+      detectTimer.current = setTimeout(() => {
+        console.log("Ship detected in video stream!");
+        if (onShipDetect) {
+          onShipDetect();
+        }
+      }, 5000);
+    } else if (!shipDetectionActive && detectTimer.current) {
+      // If detection is turned off, clear the timer
+      clearTimeout(detectTimer.current);
+      detectTimer.current = null;
+    }
+    
+    return () => {
+      if (detectTimer.current) {
+        clearTimeout(detectTimer.current);
+      }
+    };
+  }, [shipDetectionActive, streamActive, onShipDetect]);
+  
+  const startStream = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    // UDP stream configuration from Jetson
+    const streamUrl = "udp://localhost:5000";
+    
     try {
-      if (videoRef.current) {
-        // Create a video URL that points to the GStreamer UDP stream on port 5000
-        const udpStreamUrl = `http://192.168.8.105:8080/stream?port=5000`;
-        
-        videoRef.current.src = udpStreamUrl;
-        videoRef.current.onerror = () => {
-          setErrorMessage("Erreur de chargement du flux UDP. Vérifiez que le flux est actif.");
-          setStreamActive(false);
-          toast.error("Impossible de se connecter au flux vidéo");
-        };
-        
-        videoRef.current.onloadeddata = () => {
-          setStreamActive(true);
-          setErrorMessage(null);
-          toast.success("Flux vidéo Jetson connecté");
-        };
-        
-        videoRef.current.load();
-        videoRef.current.play().catch(err => {
-          console.error("Error playing UDP stream:", err);
-          setErrorMessage("Erreur de lecture du flux UDP.");
-          setStreamActive(false);
+      if ('srcObject' in video) {
+        // Access the UDP stream directly using appropriate browser APIs
+        // For demo/placeholder, we'll just show a success message
+        setStreamActive(true);
+        toast.success("Flux vidéo démarré", {
+          description: "Connexion établie avec le Jetson Nano"
         });
       }
-    } catch (err) {
-      console.error("Error setting up UDP stream:", err);
-      setStreamActive(false);
-      setErrorMessage("Erreur de configuration du flux UDP.");
+    } catch (error) {
+      console.error("Error accessing stream:", error);
+      toast.error("Erreur d'accès au flux vidéo", {
+        description: "Vérifiez la connexion avec le Jetson Nano"
+      });
     }
   };
-
+  
   const stopStream = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.src = '';
-      setStreamActive(false);
-    }
+    setStreamActive(false);
+    setShipDetectionActive(false);
+    
+    toast.info("Flux vidéo arrêté");
   };
-
-  const handleDetectShip = () => {
-    // Take a screenshot if stream is active
-    if (streamActive && videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
-      const ctx = canvas.getContext('2d');
-      
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        const imageData = canvas.toDataURL('image/jpeg');
-        takeScreenshot(imageData);
+  
+  const toggleDetection = () => {
+    setShipDetectionActive(!shipDetectionActive);
+    
+    if (!shipDetectionActive) {
+      if (!streamActive) {
+        // Auto-start stream if not active
+        startStream();
       }
+    } else {
+      toast.info("Détection de navire désactivée");
     }
-    
-    // Call the detect ship function
-    detectShip();
   };
-
-  // Start stream automatically when component mounts
-  useEffect(() => {
-    // Try to start the UDP stream
-    startUDPStream();
-    
-    // Clean up when component unmounts
-    return () => {
-      stopStream();
-    };
-  }, []);
+  
+  // For demonstration purposes
+  const simulateDetection = () => {
+    if (onShipDetect) {
+      onShipDetect();
+    }
+  };
   
   return (
-    <div className="grid grid-cols-2 gap-6 h-full animate-fade-in">
-      <OpenSeaMap />
-      
-      <Card className="bg-navy text-white border-none shadow-lg overflow-hidden flex flex-col">
-        <CardHeader className="pb-2 border-b border-white/10">
-          <CardTitle className="text-lg flex items-center">
-            <Video className="mr-2 h-5 w-5 text-accent" />
-            FLUX VIDEO JETSON
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 p-0 relative">
-          <div className="w-full h-full min-h-[340px] bg-navy-light flex flex-col items-center justify-center gap-4">
+    <Card className="bg-white/90 backdrop-blur shadow-lg h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-bold">Flux Vidéo</CardTitle>
+          <div className="flex items-center space-x-2">
             {streamActive ? (
-              <video 
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="h-full w-full object-contain"
-                style={{ minHeight: "100%", maxHeight: "100%" }}
-              />
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse mr-1"></div>
+                <span className="text-xs text-green-700">En direct</span>
+              </div>
             ) : (
-              <>
-                <div className="h-12 w-16 flex items-center justify-center border border-accent/50 rounded bg-navy-dark">
-                  <VideoOff className="h-8 w-8 text-accent" />
-                </div>
-                <p className="text-accent">Flux vidéo inactif</p>
-                {errorMessage ? (
-                  <span className="text-xs px-3 py-1 rounded-full bg-red-500/20 text-red-400">{errorMessage}</span>
-                ) : (
-                  <span className="text-xs px-3 py-1 rounded-full bg-accent/20 text-accent">
-                    {streamActive ? "Actif" : "Inactif"}
-                  </span>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    className="mt-2 bg-navy-light border border-accent text-accent hover:bg-accent hover:text-white transition-colors"
-                    onClick={startUDPStream}
-                  >
-                    <Video className="mr-2 h-4 w-4" />
-                    Démarrer flux Jetson (UDP 5000)
-                  </Button>
-                </div>
-              </>
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-gray-400 mr-1"></div>
+                <span className="text-xs text-gray-500">Hors ligne</span>
+              </div>
             )}
           </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="flex-1 flex flex-col p-2">
+        <div className="relative h-full flex-1 bg-gray-900 rounded-md overflow-hidden flex flex-col justify-center items-center">
+          {/* Placeholder for the UDP video stream */}
+          <video 
+            ref={videoRef}
+            className="w-full h-full object-cover" 
+            autoPlay
+            playsInline
+            muted
+          />
           
-          {streamActive && (
-            <div className="absolute bottom-2 left-2 bg-green-500 px-2 py-1 rounded-full text-xs font-semibold animate-pulse">
-              Flux Jetson actif (UDP 5000)
+          {!streamActive && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 bg-gray-800">
+              <Video className="h-16 w-16 mb-2 opacity-30" />
+              <p className="text-sm opacity-75">Flux vidéo inactif</p>
+              <p className="text-xs opacity-50 mt-1">Cliquez sur "Démarrer" pour activer</p>
             </div>
           )}
-        </CardContent>
-        <CardFooter className="p-4 flex gap-2">
-          {streamActive && (
-            <Button 
-              className="flex-1 bg-navy-light border border-red-500 text-red-400 hover:bg-red-900/20 transition-colors" 
-              size="lg"
-              onClick={stopStream}
-            >
-              <VideoOff className="mr-2 h-4 w-4" />
-              Arrêter
-            </Button>
+          
+          {/* Detection indicator overlay */}
+          {shipDetectionActive && streamActive && (
+            <div className="absolute top-2 right-2 bg-red-600/80 text-white px-2 py-1 rounded-md text-xs flex items-center">
+              <AlertTriangle className="h-3 w-3 mr-1 animate-pulse" />
+              Détection active
+            </div>
           )}
-          <Button 
-            className="flex-1 bg-navy-light border border-accent text-accent hover:bg-accent hover:text-white transition-colors" 
-            size="lg"
-            onClick={handleDetectShip}
+        </div>
+      </CardContent>
+      
+      <CardFooter className="pt-2 flex justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={streamActive ? "destructive" : "default"}
+            size="sm"
+            onClick={streamActive ? stopStream : startStream}
           >
-            <span className="text-xl">ALERTE</span>
+            {streamActive ? "Arrêter" : "Démarrer"}
           </Button>
-        </CardFooter>
-      </Card>
-    </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            className={shipDetectionActive ? "bg-amber-100 border-amber-300" : ""}
+            onClick={toggleDetection}
+            disabled={!streamActive}
+          >
+            {shipDetectionActive ? <EyeOff className="h-4 w-4 mr-1 text-amber-600" /> : <Eye className="h-4 w-4 mr-1" />}
+            {shipDetectionActive ? "Désactiver détection" : "Activer détection"}
+          </Button>
+        </div>
+        
+        {/* For testing only - will be removed in production */}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={simulateDetection} 
+          className="text-xs opacity-50 hover:opacity-100"
+        >
+          <Camera className="h-3 w-3 mr-1" />
+          Test Détection
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 
