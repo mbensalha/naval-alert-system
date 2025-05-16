@@ -80,6 +80,10 @@ const ShipAlert = () => {
               className={`border-accent ${
                 classification === "HOSTILE" ? "border-red-500 text-red-400 hover:bg-red-900/20" : 
                 classification === "AMI" ? "border-green-500 text-green-400 hover:bg-green-900/20" : 
+                classification === "SUSPECT" || 
+                classification === "INCONNU" || 
+                classification === "PRESUME AMI" || 
+                classification === "NEUTRE" ? "border-accent text-black hover:bg-accent/20" :
                 "border-accent text-white hover:bg-accent/20"
               }`}
               onClick={() => handleClassify(classification)}
