@@ -11,6 +11,7 @@ const DetectionPanel = () => {
   const detectShip = useShipStore((state) => state.detectShip);
   const takeScreenshot = useShipStore((state) => state.takeScreenshot);
   const setAlertActive = useShipStore((state) => state.setAlertActive);
+  const fetchJetsonAlertImage = useShipStore((state) => state.fetchJetsonAlertImage);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [streamActive, setStreamActive] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -20,14 +21,14 @@ const DetectionPanel = () => {
   const startUDPStream = () => {
     try {
       if (videoRef.current) {
-        // Create a video URL that points to the GStreamer UDP stream on port 5000
-        const udpStreamUrl = `http://192.168.8.105:8080/stream?port=5000`;
+        // Use video feed from Flask server running on Jetson
+        const videoStreamUrl = `http://192.168.8.105:5000/video_feed`;
         
-        videoRef.current.src = udpStreamUrl;
+        videoRef.current.src = videoStreamUrl;
         videoRef.current.onerror = () => {
-          setErrorMessage("Erreur de chargement du flux UDP. Vérifiez que le flux est actif.");
+          setErrorMessage("Erreur de chargement du flux vidéo. Vérifiez que le flux est actif.");
           setStreamActive(false);
-          toast.error("Impossible de se connecter au flux vidéo");
+          toast.error("Impossible de se connecter au flux vidéo Jetson");
         };
         
         videoRef.current.onloadeddata = () => {
@@ -44,15 +45,15 @@ const DetectionPanel = () => {
         
         videoRef.current.load();
         videoRef.current.play().catch(err => {
-          console.error("Error playing UDP stream:", err);
-          setErrorMessage("Erreur de lecture du flux UDP.");
+          console.error("Error playing video stream:", err);
+          setErrorMessage("Erreur de lecture du flux vidéo.");
           setStreamActive(false);
         });
       }
     } catch (err) {
-      console.error("Error setting up UDP stream:", err);
+      console.error("Error setting up video stream:", err);
       setStreamActive(false);
-      setErrorMessage("Erreur de configuration du flux UDP.");
+      setErrorMessage("Erreur de configuration du flux vidéo.");
     }
   };
 
@@ -66,7 +67,7 @@ const DetectionPanel = () => {
     }
   };
 
-  const handleDetectShip = () => {
+  const handleDetectShip = async () => {
     // Take a screenshot if stream is active
     if (streamActive && videoRef.current) {
       const canvas = document.createElement('canvas');
@@ -79,6 +80,17 @@ const DetectionPanel = () => {
         const imageData = canvas.toDataURL('image/jpeg');
         takeScreenshot(imageData);
       }
+    } else {
+      // Try to fetch Jetson alert image directly
+      try {
+        const alertImage = await fetchJetsonAlertImage();
+        if (alertImage) {
+          takeScreenshot(alertImage);
+          toast.info("Image d'alerte récupérée depuis Jetson");
+        }
+      } catch (error) {
+        console.error("Error fetching Jetson alert image:", error);
+      }
     }
     
     // Call the detect ship function
@@ -90,7 +102,7 @@ const DetectionPanel = () => {
 
   // Start stream automatically when component mounts
   useEffect(() => {
-    // Try to start the UDP stream
+    // Try to start the video stream
     startUDPStream();
     
     // Clean up when component unmounts
@@ -142,7 +154,7 @@ const DetectionPanel = () => {
                     onClick={startUDPStream}
                   >
                     <Video className="mr-2 h-4 w-4" />
-                    Démarrer flux Jetson (UDP 5000)
+                    Démarrer flux Jetson
                   </Button>
                 </div>
               </>
@@ -151,7 +163,7 @@ const DetectionPanel = () => {
           
           {streamActive && (
             <div className="absolute bottom-2 left-2 bg-green-500 px-2 py-1 rounded-full text-xs font-semibold animate-pulse">
-              Flux Jetson actif (UDP 5000)
+              Flux Jetson actif
             </div>
           )}
         </CardContent>

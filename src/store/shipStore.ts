@@ -26,6 +26,7 @@ interface ShipState {
   setMqttImage: (imageData: string) => void;
   exportHistory: () => string;
   setAlertActive: (active: boolean) => void;
+  fetchJetsonAlertImage: () => Promise<string | null>;
 }
 
 export const useShipStore = create<ShipState>()(
@@ -44,26 +45,74 @@ export const useShipStore = create<ShipState>()(
           long: -6.2 + Math.random() * 2
         };
         
-        // Use last received image if available, otherwise leave empty
-        const { lastImage } = get();
-        
-        // Generate a ship detection
-        const newShip: DetectedShip = {
-          id: crypto.randomUUID(),
-          detectionTime: new Date(),
-          position: position,
-          classification: null,
-          screenshot: lastImage || ""
+        // Try to fetch the Jetson alert image
+        const fetchImage = async () => {
+          try {
+            const alertImage = await get().fetchJetsonAlertImage();
+            
+            // Generate a ship detection
+            const newShip: DetectedShip = {
+              id: crypto.randomUUID(),
+              detectionTime: new Date(),
+              position: position,
+              classification: null,
+              screenshot: alertImage || get().lastImage || ""
+            };
+            
+            // Play sound notification for detection
+            playDetectionAlert();
+            
+            set({ 
+              alertActive: true,
+              currentShip: newShip,
+              lastImage: null // Reset last image after using it
+            });
+          } catch (error) {
+            console.error("Error fetching alert image:", error);
+            
+            // Fall back to last MQTT image or empty string if fetch fails
+            const newShip: DetectedShip = {
+              id: crypto.randomUUID(),
+              detectionTime: new Date(),
+              position: position,
+              classification: null,
+              screenshot: get().lastImage || ""
+            };
+            
+            // Play sound notification for detection
+            playDetectionAlert();
+            
+            set({ 
+              alertActive: true,
+              currentShip: newShip,
+              lastImage: null // Reset last image after using it
+            });
+          }
         };
         
-        // Play sound notification for detection
-        playDetectionAlert();
-        
-        set({ 
-          alertActive: true,
-          currentShip: newShip,
-          lastImage: null // Reset last image after using it
-        });
+        fetchImage();
+      },
+      
+      fetchJetsonAlertImage: async (): Promise<string | null> => {
+        try {
+          // Fetch the alert image from Jetson's Flask server
+          const response = await fetch('http://192.168.8.105:5000/alert');
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          
+          // Convert the blob to base64
+          const blob = await response.blob();
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.error("Error fetching Jetson alert image:", error);
+          return null;
+        }
       },
       
       classifyShip: (classification) => {
