@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -12,14 +11,12 @@ import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [brokerAddress, setBrokerAddress] = useState("192.168.8.105");
   const [brokerPort, setBrokerPort] = useState(1883);
   const [gpsTopic, setGpsTopic] = useState("esp32/navire/gps");
   const [imageTopic, setImageTopic] = useState("station/navire/image");
-  
   const {
     connected,
     lastPosition,
@@ -27,7 +24,6 @@ const Dashboard = () => {
     subscribe,
     disconnect
   } = useMqttStore();
-
   useEffect(() => {
     document.title = "Système de Surveillance Navale";
 
@@ -66,7 +62,6 @@ const Dashboard = () => {
       clearInterval(timer);
     };
   }, [connected, connect, subscribe, brokerAddress, brokerPort, gpsTopic, imageTopic]);
-
   const handleReconnect = () => {
     try {
       // Reconnect to MQTT broker
@@ -89,7 +84,6 @@ const Dashboard = () => {
       toast.error("Erreur lors de la reconnexion MQTT");
     }
   };
-
   const handleConfigSave = () => {
     // First disconnect from current broker
     if (connected) {
@@ -128,7 +122,6 @@ const Dashboard = () => {
     minute: '2-digit',
     second: '2-digit'
   });
-
   return <div className="min-h-screen bg-naval-bg bg-cover bg-center flex flex-col">
       <Header />
       
@@ -174,12 +167,7 @@ const Dashboard = () => {
                       </Label>
                       <Input id="gpsTopic" value={gpsTopic} onChange={e => setGpsTopic(e.target.value)} className="col-span-3" />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4 mt-2">
-                      <Label htmlFor="imageTopic" className="text-right">
-                        Image (Jetson)
-                      </Label>
-                      <Input id="imageTopic" value={imageTopic} onChange={e => setImageTopic(e.target.value)} className="col-span-3" />
-                    </div>
+                    
                   </div>
                 </div>
                 <DialogFooter>
@@ -201,5 +189,4 @@ const Dashboard = () => {
       <ShipAlert />
     </div>;
 };
-
 export default Dashboard;
