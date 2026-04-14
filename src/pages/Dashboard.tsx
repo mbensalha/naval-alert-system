@@ -183,6 +183,25 @@ const Dashboard = () => {
             <DetectionPanel />
             <CommandPanel />
           </div>
+
+          <div className="mt-6">
+            <div className="bg-navy rounded-lg border border-white/10 shadow-lg overflow-hidden">
+              <div className="px-4 py-2 border-b border-white/10 flex items-center gap-2">
+                <Video className="h-5 w-5 text-accent" />
+                <span className="text-white font-semibold">VIDÉO ORIGINALE</span>
+              </div>
+              <div className="flex items-center justify-center bg-navy-light">
+                <video
+                  src="http://127.0.0.1:5000/videos/video_originale.avi"
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="w-full max-h-[400px] object-contain"
+                />
+              </div>
+            </div>
+          </div>
         </main>
       </div>
       
