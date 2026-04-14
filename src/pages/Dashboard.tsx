@@ -5,7 +5,7 @@ import DetectionPanel from '@/components/DetectionPanel';
 import CommandPanel from '@/components/CommandPanel';
 import ShipAlert from '@/components/ShipAlert';
 import { useMqttStore } from '@/services/mqttService';
-import { AlertCircle, RefreshCw, Settings } from 'lucide-react';
+import { AlertCircle, RefreshCw, Settings, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
