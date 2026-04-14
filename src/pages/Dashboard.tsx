@@ -188,17 +188,47 @@ const Dashboard = () => {
             <div className="bg-navy rounded-lg border border-white/10 shadow-lg overflow-hidden">
               <div className="px-4 py-2 border-b border-white/10 flex items-center gap-2">
                 <Video className="h-5 w-5 text-accent" />
-                <span className="text-white font-semibold">VIDÉO ORIGINALE</span>
+                <span className="text-white font-semibold">TRAITEMENT VIDÉO SÉCURISÉ</span>
               </div>
-              <div className="flex items-center justify-center bg-navy-light">
-                <video
-                  src="http://127.0.0.1:5000/videos/video_originale.mp4"
-                  controls
-                  autoPlay
-                  loop
-                  playsInline
-                  className="w-full max-h-[400px] object-contain"
-                />
+              <div className="p-4 space-y-4">
+                <p className="text-white/70 text-sm text-center">
+                  Le flux vidéo est capturé par le Jetson, chiffré par FPGA en AES-CTR, puis reconstruit pour affichage.
+                </p>
+                <div className="flex justify-center">
+                  <Button
+                    className="bg-accent text-white hover:bg-accent/80"
+                    onClick={() => toast.info("Traitement vidéo lancé...")}
+                  >
+                    <Video className="mr-2 h-4 w-4" />
+                    Traiter la vidéo
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <span className="text-white text-xs font-semibold block text-center">Vidéo originale</span>
+                    <video
+                      src="http://127.0.0.1:5000/videos/video_originale.mp4"
+                      controls playsInline loop
+                      className="w-full rounded border border-white/10 bg-navy-light"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-white text-xs font-semibold block text-center">Vidéo chiffrée</span>
+                    <video
+                      src="http://127.0.0.1:5000/videos/video_chiffree.mp4"
+                      controls playsInline loop
+                      className="w-full rounded border border-white/10 bg-navy-light"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-white text-xs font-semibold block text-center">Vidéo déchiffrée</span>
+                    <video
+                      src="http://127.0.0.1:5000/videos/video_dechiffree.mp4"
+                      controls playsInline loop
+                      className="w-full rounded border border-white/10 bg-navy-light"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
