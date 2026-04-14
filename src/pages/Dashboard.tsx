@@ -5,7 +5,7 @@ import DetectionPanel from '@/components/DetectionPanel';
 import CommandPanel from '@/components/CommandPanel';
 import ShipAlert from '@/components/ShipAlert';
 import { useMqttStore } from '@/services/mqttService';
-import { AlertCircle, RefreshCw, Settings } from 'lucide-react';
+import { AlertCircle, RefreshCw, Settings, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -182,6 +182,25 @@ const Dashboard = () => {
           <div className="grid grid-cols-[2fr_1fr] gap-6 flex-1">
             <DetectionPanel />
             <CommandPanel />
+          </div>
+
+          <div className="mt-6">
+            <div className="bg-navy rounded-lg border border-white/10 shadow-lg overflow-hidden">
+              <div className="px-4 py-2 border-b border-white/10 flex items-center gap-2">
+                <Video className="h-5 w-5 text-accent" />
+                <span className="text-white font-semibold">VIDÉO ORIGINALE</span>
+              </div>
+              <div className="flex items-center justify-center bg-navy-light">
+                <video
+                  src="http://127.0.0.1:5000/videos/video_originale.avi"
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="w-full max-h-[400px] object-contain"
+                />
+              </div>
+            </div>
           </div>
         </main>
       </div>
