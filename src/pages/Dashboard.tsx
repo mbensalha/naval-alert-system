@@ -192,7 +192,7 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center justify-center bg-navy-light">
                 <video
-                  src="http://127.0.0.1:5000/videos/video_originale.avi"
+                  src="http://127.0.0.1:5000/videos/video_originale.mp4"
                   controls
                   autoPlay
                   loop
